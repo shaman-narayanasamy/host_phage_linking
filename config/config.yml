@@ -1,0 +1,16 @@
+---
+tmp_dir: "/ibex/tmp/naras0c"
+phage_db_table: "/ibex/user/naras0c/key_taxa_ww/phage_db.tsv"
+host_table: "/ibex/user/naras0c/key_taxa_ww/host_genomes.tsv"
+host_dir: "/ibex/user/naras0c/key_taxa_ww/bacterial_genomes"
+output_dir: "/ibex/user/naras0c/key_taxa_ww/output"
+
+gtdbtk:
+  db: "/ibex/reference/KSL/gtdb-tk/release214"
+
+virhostmatcher:
+  script: "/home/naras0c/repositories/github/VirHostMatcher/vhm.py"
+
+genomad:
+  db: "/ibex/reference/KSL/genomad/v1.5/genomad_db"
+  threads: 24

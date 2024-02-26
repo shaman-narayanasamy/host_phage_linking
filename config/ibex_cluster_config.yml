@@ -1,0 +1,35 @@
+__default__:
+    time: "0-01:00:00"
+    partition: "batch"
+    nodes: 1
+    ntasks: 1
+    ncpus: 1
+    job-name: "{rule}"
+    stdout: "slurm/%j.out"
+    mail-user: "shaman.narayanasamy@kaust.edu.sa"
+    qos: "normal"
+    mem_gb: "16G"
+
+pilercr:
+    nodes: 1
+    ncpus: 12
+    mem_gb: "24GB"
+    time: "12:00:00"
+
+genomad:
+    nodes: 1
+    ncpus: 24
+    mem_gb: "200GB"
+    time: "72:00:00"
+
+spacepharer:
+    nodes: 1
+    ncpus: 12
+    mem_gb: "200GB"
+    time: "72:00:00"
+
+create_spacepharer_db:
+    nodes: 1
+    ncpus: 12
+    mem_gb: "200GB"
+    time: "72:00:00"
