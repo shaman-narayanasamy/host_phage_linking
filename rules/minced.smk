@@ -8,6 +8,6 @@ rule minced:
     log: "host_minced/logs/{host_id}.txt"
     shell:
         """ 
-        mkdir -p host_minced
+        mkdir -p host_mince
         minced {input.host_fasta} {output}
         """

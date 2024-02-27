@@ -20,3 +20,6 @@ List of directories that separate genomes based on taxa of interest
 ```{bash}
 /home/naras0c/repositories/github/key_taxa_ww/launchers/sbatch.sh --dry-run
 ```
+```{bash}
+nohup launchers/sbatch.sh > nohup_logs/sbatch_launch_$(date +'%Y%m%d_%H%M%S').log 2>&1 &
+```

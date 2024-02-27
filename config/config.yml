@@ -1,7 +1,7 @@
 ---
 tmp_dir: "/ibex/tmp/naras0c"
 phage_db_table: "/ibex/user/naras0c/key_taxa_ww/phage_db.tsv"
-host_table: "/ibex/user/naras0c/key_taxa_ww/all_host_taxa.tsv"
+host_table: "/ibex/user/naras0c/key_taxa_ww/all_host_genomes.tsv"
 host_taxa_table: "/ibex/user/naras0c/key_taxa_ww/all_host_taxa.tsv"
 output_dir: "/ibex/user/naras0c/key_taxa_ww/output"
 
