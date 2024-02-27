@@ -20,8 +20,6 @@ phage_dbs = pd.read_table(config["phage_db_table"], sep="\t", comment = "#").set
 workdir:
     output_dir
 
-print(phage_dbs)
-
 include:
     "../rules/prepare_data.smk"
 

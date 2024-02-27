@@ -3,7 +3,7 @@ rule virhostmatcher:
         virus_dir = "phage_databases/{phage_db_id}",
         host_dir = lambda wildcards: host_dirs.loc[wildcards.host_taxa, "path"],
     output:
-        output_dir = "directory(virhostmatcher/{host_taxa}-x-{phage_db_id})" 
+        output_dir = directory("virhostmatcher/{host_taxa}-x-{phage_db_id}")
     params:
         vhm_script = config["virhostmatcher"]["script"]
     shell:
