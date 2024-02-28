@@ -14,3 +14,6 @@ virhostmatcher:
 genomad:
   db: "/ibex/reference/KSL/genomad/v1.5/genomad_db"
   threads: 24
+
+seqkit:
+  threads: 24

@@ -42,7 +42,7 @@ virhostmatcher:
 
 split_fasta:
     nodes: 1
-    ncpus: 12
+    ncpus: 24
     mem_gb: "120GB"
     time: "120:00:00"
 
