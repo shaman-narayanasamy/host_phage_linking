@@ -1,0 +1,133 @@
+---
+title: "Curating key wastewater taxa genome assemblies"
+format: html
+params:
+  system_type: "sb"
+---
+
+```{r}
+library(tidyverse)
+library(rentrez)
+library(xml2)
+```
+
+```{r}
+root_dir <- "/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/"
+
+#list.files(root_dir)
+
+assembly_dat <- read_tsv(paste0(root_dir, "Flavobacterium_assemblies.tsv"))
+```
+
+```{r}
+root_dir <- "/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/NCBI_taxonomy_limited_blastn_results/"
+
+files <- 
+  list.files(root_dir) %>% .[grep(params$system_type, .)]
+
+
+  for (i in 1:length(files)){ 
+  
+  tmp <- read_tsv(paste0(root_dir, files[i]), comment = "#", 
+                      col_names =   
+                        c("query acc.ver", "subject acc.ver", "% identity", 
+                          "alignment length", "mismatches", "gap opens", "q. start", 
+                          "q. end", "s. start", "s. end", "evalue", "bit score")) %>% 
+    mutate(taxa = files[i]) %>% 
+    separate(taxa, into = c("system", "taxonomic_level", "tmp0", "taxa"), sep = "_") %>% 
+    select(-tmp0) %>%  
+    head(n = 100) 
+ if (i == 1) {  
+   blast_dat <- tmp } else { 
+    blast_dat <- bind_rows(blast_dat, tmp) } 
+}
+
+```
+```{r}
+get_assembly_id <- function(subject_id = "JAKIHP010000012.1"){ 
+  
+  nuccore2assemblylinks <- entrez_link(dbfrom = "nuccore", db = "assembly", id = subject_id)  
+ 
+  if (is.null(nuccore2assemblylinks$links$nuccore_assembly) ||
+      length(nuccore2assemblylinks$links$nuccore_assembly) == 0) {
+   
+    return(NA)
+    
+  } else {
+    
+  nuccore2assemblylinks$links$nuccore_assembly %>%   
+    entrez_summary(db = "assembly", id = .) %>%  
+    .$assemblyaccession %>% 
+    return()
+  }
+}
+
+# Create an empty column
+blast_dat$assembly_id = NA
+
+# Loop through the table
+for (i in 1:nrow(blast_dat)){
+  blast_dat$assembly_id[i] <- get_assembly_id(subject_id = blast_dat$`subject acc.ver`[i])
+}
+
+
+
+## Those assemblies that represent MAGs are somehow different and their IDs do
+## not link to an assembly. Therefore, we need to manipulate the BLAST subject
+## ID to extract the "root" ID and then repeat the search on the root assembly ID
+blast_dat <- blast_dat %>% 
+  mutate(change = `subject acc.ver`) %>% #select(`subject acc.ver`, change) %>% 
+  separate(change, into = c("id_root", "to_change"), sep = "010") %>% 
+  mutate(id_root = paste0(id_root, "010")) %>% # replace the lost 010 that was removed
+  separate(to_change, into = "tmp", sep = '\\.') %>% 
+  mutate(replaced_suffix = str_replace_all(tmp, "[1-9]", "0")) %>% 
+  mutate(root_assembly_id = paste0(id_root, replaced_suffix)) %>% 
+  select(-c(id_root, tmp, replaced_suffix)) %>% 
+  mutate(is_mag = case_when(
+            is.na(assembly_id) ~ TRUE,
+            TRUE ~ FALSE)
+  )
+ 
+# Loop through the table, this time with the root assembly IDs
+for (i in 1:nrow(blast_dat)){
+  if (is.na(blast_dat$assembly_id[i])){ 
+    blast_dat$assembly_id[i] <- get_assembly_id(subject_id = blast_dat$root_assembly_id[i])
+  } else {
+    print ("All good!")
+    }
+}
+
+#blast2assembly <- 
+  blast_dat %>% filter(is.na(assembly_id)) #%>%
+  write_tsv("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/blast2assembly.tsv")
+
+blast2assembly %>% select(assembly_id, system, taxonomic_level, taxa) %>% distinct()
+blast2assembly %>% group_by(taxa) %>% slice_max(order_by = `% identity` , n = 10)
+
+blast2assembly %>% select(assembly_id, taxa, `% identity`)
+
+## Identify some edge cases and solve them
+blast_dat <- blast_dat %>% filter(is.na(assembly_id)) %>%
+  mutate(root_assembly_id = str_remove(`subject acc.ver`, "\\.1$")) %>% # Remove .1 suffix
+  mutate(root_assembly_id = str_sub(root_assembly_id, 1, nchar(root_assembly_id)-4)) %>% # Keep all but last 4 digits
+  mutate(root_assembly_id = paste0(root_assembly_id, "0000")) %>% # Append four zeros
+  bind_rows(blast_dat %>% filter(!is.na(assembly_id)), .)
+
+## Rerun the extraction of assembly IDs
+for (i in 1:nrow(blast_dat)){
+  if (is.na(blast_dat$assembly_id[i])){ 
+    blast_dat$assembly_id[i] <- get_assembly_id(subject_id = blast_dat$root_assembly_id[i])
+  } else {
+    print ("All good!")
+    }
+}
+```
+
+```{r summarise_assemblies, caption = "No. of representative genomes per taxa"}
+blast_dat %>% filter(!is.na(assembly_id)) %>% 
+  filter(`% identity` >= 95) %>% 
+  select(assembly_id, system, taxonomic_level, taxa) %>% distinct() %>% 
+  group_by(taxonomic_level, taxa) %>% summarise(no_of_assemblies = n()) %>% 
+  knitr::kable()
+```
+
