@@ -8,6 +8,9 @@ rule split_fasta:
         multi_fasta = lambda wildcards: phage_dbs.loc[wildcards.phage_db_id, "path"],
     output:
         output_dir = directory("phage_databases/{phage_db_id}"),
+    conda: "../envs/seqkit_env.yml"
+    params:
+         threads = config["seqkit"]["threads"]
     shell:
          """
          if [ -d {input.multi_fasta} ]; then
@@ -15,9 +18,9 @@ rule split_fasta:
              echo "Creating soft link for {output.output_dir}"
              ln -s $(realpath {input.multi_fasta}) $(realpath {output.output_dir})
          else
-             mkdir -p {output.output_dir} 
-             awk '/^>/{{if(x>0) close(out); \
-             x++; out=sprintf("gzip > {output.output_dir}/%s.fna.gz", substr($0,2)); print | out; \
-             next}} {{print | out}}' {input.multi_fasta}
-         fi
+             seqkit -j {params.threads} split --by-id {input.multi_fasta} \
+             --extension .gz \
+             -O {output.output_dir}
+        fi
          """
+
