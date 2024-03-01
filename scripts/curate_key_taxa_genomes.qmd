@@ -1,25 +1,23 @@
 ---
 title: "Curating key wastewater taxa genome assemblies"
 format: html
+editor: source
+tbl-cap-location: top
+execute:
+  echo: false 
+  warning: false
+  message: false
 params:
   system_type: "sb"
 ---
 
-```{r}
+```{r load_packages}
 library(tidyverse)
 library(rentrez)
 library(xml2)
 ```
 
-```{r}
-root_dir <- "/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/"
-
-#list.files(root_dir)
-
-assembly_dat <- read_tsv(paste0(root_dir, "Flavobacterium_assemblies.tsv"))
-```
-
-```{r}
+```{r read_blastn_results}
 root_dir <- "/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/NCBI_taxonomy_limited_blastn_results/"
 
 files <- 
@@ -43,8 +41,12 @@ files <-
 }
 
 ```
-```{r}
-get_assembly_id <- function(subject_id = "JAKIHP010000012.1"){ 
+```{r function_get_assembly_id}
+# Function: Searches for links to any assemblies within the NCBI based on a given
+# query ID
+
+get_assembly_id <- function(subject_id =
+"JAKIHP010000012.1"){ 
   
   nuccore2assemblylinks <- entrez_link(dbfrom = "nuccore", db = "assembly", id = subject_id)  
  
@@ -61,7 +63,9 @@ get_assembly_id <- function(subject_id = "JAKIHP010000012.1"){
     return()
   }
 }
+```
 
+```{r extract_related_assemblies}
 # Create an empty column
 blast_dat$assembly_id = NA
 
@@ -69,8 +73,6 @@ blast_dat$assembly_id = NA
 for (i in 1:nrow(blast_dat)){
   blast_dat$assembly_id[i] <- get_assembly_id(subject_id = blast_dat$`subject acc.ver`[i])
 }
-
-
 
 ## Those assemblies that represent MAGs are somehow different and their IDs do
 ## not link to an assembly. Therefore, we need to manipulate the BLAST subject
@@ -97,15 +99,6 @@ for (i in 1:nrow(blast_dat)){
     }
 }
 
-#blast2assembly <- 
-  blast_dat %>% filter(is.na(assembly_id)) #%>%
-  write_tsv("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/blast2assembly.tsv")
-
-blast2assembly %>% select(assembly_id, system, taxonomic_level, taxa) %>% distinct()
-blast2assembly %>% group_by(taxa) %>% slice_max(order_by = `% identity` , n = 10)
-
-blast2assembly %>% select(assembly_id, taxa, `% identity`)
-
 ## Identify some edge cases and solve them
 blast_dat <- blast_dat %>% filter(is.na(assembly_id)) %>%
   mutate(root_assembly_id = str_remove(`subject acc.ver`, "\\.1$")) %>% # Remove .1 suffix
@@ -123,11 +116,23 @@ for (i in 1:nrow(blast_dat)){
 }
 ```
 
-```{r summarise_assemblies, caption = "No. of representative genomes per taxa"}
+```{r summarise_assemblies}
 blast_dat %>% filter(!is.na(assembly_id)) %>% 
   filter(`% identity` >= 95) %>% 
   select(assembly_id, system, taxonomic_level, taxa) %>% distinct() %>% 
   group_by(taxonomic_level, taxa) %>% summarise(no_of_assemblies = n()) %>% 
-  knitr::kable()
+  knitr::kable(caption = "Summary of no of taxa")
 ```
 
+```{r write_table}
+blast2assembly <- 
+  blast_dat %>% filter(!is.na(assembly_id)) %>%
+  write_tsv(
+    paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", paste0(params$system_type, "_blast2assembly.tsv"), sep = "")
+    )
+
+blast2assembly %>% select(assembly_id, taxonomic_level, taxa) %>% distinct() %>%  
+  write_tsv(
+    paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", paste0(params$system_type, "_assembly_list.tsv"), sep = "")
+    )
+```

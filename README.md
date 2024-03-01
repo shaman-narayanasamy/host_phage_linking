@@ -23,3 +23,14 @@ List of directories that separate genomes based on taxa of interest
 ```{bash}
 nohup launchers/sbatch.sh > nohup_logs/sbatch_launch_$(date +'%Y%m%d_%H%M%S').log 2>&1 &
 ```
+
+## Execute markdown for automated curation of blastn results
+For sludge bulking key taxa:
+```{shell}
+quarto render /Users/shaman.narayanasamy/Work/repositories/github/key_taxa_ww/scripts/curate_key_taxa_genomes.qmd --to html -P system_type=sb -o sb_output.html --output-dir render
+```
+
+For saltwater desalination biofilm key taxa:
+```{shell}
+quarto render /Users/shaman.narayanasamy/Work/repositories/github/key_taxa_ww/scripts/curate_key_taxa_genomes.qmd --to html -P system_type=swbd -o swbd_output.html --output-dir render
+```
