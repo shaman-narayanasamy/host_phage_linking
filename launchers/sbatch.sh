@@ -32,7 +32,7 @@ case "${SMK_ARG}" in
 esac
 
 CMD="snakemake ${SMK_ARG} \
-	-rp \
+	-krp \
 	--configfile $SMK_CONFIG \
 	--conda-prefix /ibex/user/naras0c/conda-environments/ \
 	--use-conda \

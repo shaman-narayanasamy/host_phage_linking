@@ -12,9 +12,9 @@ rule create_spacepharer_db:
          mkdir -p {tmp_dir}/{wildcards.phage_db_id}/tmpFolder
          mkdir -p {tmp_dir}/{wildcards.phage_db_id}/tmpFolder_rev
 
-	 spacepharer createsetdb phage_databases/{wildcards.phage_db_id}/*.{{fna,fa}}.gz \
+	 spacepharer createsetdb phage_databases/{wildcards.phage_db_id}/*.gz \
          {output.output_dir}/targetSetDb {tmp_dir}/{wildcards.phage_db_id}/tmpFolder
 
-	 spacepharer createsetdb phage_databases/{wildcards.phage_db_id}/*.{{fna,fa}}.gz \
+	 spacepharer createsetdb phage_databases/{wildcards.phage_db_id}/*.gz \
          {output.output_dir}/targetSetDb_rev {tmp_dir}/{wildcards.phage_db_id}/tmpFolder_rev --reverse-fragments 1
          """
