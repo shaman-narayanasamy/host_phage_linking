@@ -8,7 +8,7 @@ rule genomes_to_one_dir:
         mkdir -p {output.output_dir}
 
         find {input.host_dir} -type f -name "*.fna" -print0 | \
-        xargs -0 -I{{}} sh -c 'ln -s "$1" "test_host_dir/$(basename "$1")"' sh {{}}
+        xargs -0 -I{{}} sh -c 'ln -s "$1" "{output.output_dir}/$(basename "$1")"' sh {{}}
         """
 
 rule virhostmatcher:
