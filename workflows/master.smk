@@ -49,4 +49,4 @@ rule all:
         expand("host_minced/{host_id}.txt", host_id = hosts.index),
         expand("spacepharer/{host_id}-x-{phage_db_id}/predictions.tsv", phage_db_id = phage_dbs.index, host_id = hosts.index),
         expand("host_genomad/{host_id}", host_id = hosts.index),
-        expand("virhostmatcher/{host_taxa}-x-{phage_db_id}", host_taxa = host_dirs.index, phage_db_id = phage_dbs.index)
+        expand("virhostmatcher/{host_taxa}-x-{phage_db_id}", host_taxa = host_dirs.index, phage_db_id = phage_dbs.index),
