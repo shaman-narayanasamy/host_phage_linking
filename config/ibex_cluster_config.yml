@@ -45,4 +45,3 @@ split_fasta:
     ncpus: 24
     mem_gb: "120GB"
     time: "120:00:00"
-
