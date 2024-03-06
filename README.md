@@ -34,3 +34,24 @@ For saltwater desalination biofilm key taxa:
 ```{shell}
 quarto render /Users/shaman.narayanasamy/Work/repositories/github/key_taxa_ww/scripts/curate_key_taxa_genomes.qmd --to html -P system_type=swbd -o swbd_output.html --output-dir render
 ```
+
+## Collect data for analysis
+Create a folder to store all the summary data:
+```{sh}
+cd /ibex/user/naras0c/key_taxa_ww/output
+mkdir -p summary_data
+```
+
+Obtain all the fasta IDs of the phages:
+```{sh}
+$ find /ibex/user/naras0c/key_taxa_ww/output/phage_databases -type f -name "*.gz" -print0 | xargs -0 -I{} sh -c 'zcat {} | grep "^>" | sed "s~^~{}: ~"' | sed -e 's/: >/\t/g' > summary_data/phage_fastaFilename2fastaID.tsv
+```
+
+Compile spacepharere (CRISPR-spacer matching) data:
+```{sh}
+cat spacepharer/*/predictions.tsv | grep -v "^#" > summary_data/spacepharer_spacer_alignment_results.tsv
+```
+
+```{sh}
+cat spacepharer/*/predictions.tsv | \grep "^#" | sed -e 's/^#//g' > summary_data/spacepharer_host_results.tsv
+```
