@@ -41,6 +41,9 @@ include:
 include:
     "../rules/virhostmatcher.smk"
 
+include:
+    "../rules/crisprcasfinder.smk"
+
 rule all:
      input:
         expand("phage_databases/{phage_db_id}", phage_db_id = phage_dbs.index),
@@ -50,3 +53,4 @@ rule all:
         expand("spacepharer/{host_id}-x-{phage_db_id}/predictions.tsv", phage_db_id = phage_dbs.index, host_id = hosts.index),
         expand("host_genomad/{host_id}", host_id = hosts.index),
         expand("virhostmatcher/{host_taxa}-x-{phage_db_id}", host_taxa = host_dirs.index, phage_db_id = phage_dbs.index),
+        expand("host_crisprcasfinder/{host_id}", host_id = hosts.index)

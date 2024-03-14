@@ -17,3 +17,7 @@ genomad:
 
 seqkit:
   threads: 24
+
+crisprcasfinder:
+  executor_script_path: "/home/naras0c/repositories/github/key_taxa_ww/scripts/run_crisprcasfinder.sh"
+  threads: 4
