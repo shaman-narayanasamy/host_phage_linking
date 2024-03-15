@@ -55,3 +55,20 @@ cat spacepharer/*/predictions.tsv | grep -v "^#" > summary_data/spacepharer_spac
 ```{sh}
 cat spacepharer/*/predictions.tsv | \grep "^#" | sed -e 's/^#//g' > summary_data/spacepharer_host_results.tsv
 ```
+
+Collect CRISPR-Cas information for the the key taxa genomes:
+
+
+```{sh}
+grep -H "####Summary" host_crisprcasfinder/GC*/*/TSV/Cas_REPORT.tsv | sed -e 's/:####/\t/' | sed -e 's:host_crisprcasfinder/::g' | sed -e 's:/:\t:' | sed -s 's/:/\t/g' | cut -f 1,6 | awk -v OFS="\t" '{
+    printf "%s\t", $1;  # Print the file identifier with a trailing tab
+    $1="";  # Remove the file identifier from the line
+    gsub(/\[|\]/, "");  # Remove brackets
+    gsub(/\([^)]+\)/, "");  # Remove content within parentheses
+    gsub(/.*####Summary system CAS:.*: \[|\].*/, "");  # Strip leading and trailing parts (if still needed)
+    n = gsub(/cas[[:digit:]]+_Type[[:alnum:]_]+/, "&");  # Keep casX_TypeY patterns
+    gsub(/; /, OFS);  # Replace "; " with a tab
+    gsub(/;/, "");  # Remove remaining semicolons
+    print;  # Print the modified line
+}' > summary_data/crisprcasfinder_host_results.tsv
+```
