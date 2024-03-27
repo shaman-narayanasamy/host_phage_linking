@@ -4,7 +4,7 @@
 #   1: --dry-run for a snakemake dry-run, leave empty for execution
 
 SMK_PRF=""
-SMK_FILE="workflows/master.smk"
+SMK_FILE="workflows/crisprcasfinder.smk"
 SMK_JOBS=1000 # USER SETTING: number of slurm jobs to be executed in parallel
 SMK_ARG="$1" # ARG: add snakemake directives "--dry-run", "--touch" or "--unlock". Empty value will launch the analysis and other values will invoke an error.
 SMK_CONFIG="config/config.yml"

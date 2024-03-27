@@ -17,6 +17,7 @@ rule split_fasta:
              echo "{input.multi_fasta} is already a folder likely with multiple fasta files."
              echo "Creating soft link for {output.output_dir}"
              ln -s $(realpath {input.multi_fasta}) $(realpath {output.output_dir})
+             touch {output.output_dir}
          else
              seqkit -j {params.threads} split --by-id {input.multi_fasta} \
              --extension .gz \

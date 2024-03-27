@@ -11,10 +11,10 @@ rule spacepharer:
     shell:
         """ 
         mkdir -p spacepharer/{wildcards.host_id}-x-{wildcards.phage_db_id}
-
+         
         # Need an if statement to ensure that the CRISPR files are not empty
         if [ $(wc -l < {input.host_pilercr_crispr}) -gt 5 ] && [ -s {input.host_minced_crispr} ]; then
-
+        
             mkdir -p {tmp_dir}/tmpFolder/{wildcards.host_id}-x-{wildcards.phage_db_id}
     
     	    spacepharer easy-predict {input.host_pilercr_crispr} \

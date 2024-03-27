@@ -35,11 +35,47 @@ For saltwater desalination biofilm key taxa:
 quarto render /Users/shaman.narayanasamy/Work/repositories/github/key_taxa_ww/scripts/curate_key_taxa_genomes.qmd --to html -P system_type=swbd -o swbd_output.html --output-dir render
 ```
 
-## Summarising data
+## Summarising data for analysis
 ### Summarise 16S sequences
 The 16S sequences were a product of a separate analyses. They were  shared as
 fasta files (with the extension `.txt`). Hence, we summarise the no. of sequences as follows:
 
 ```{sh}
 grep -nc "^>" *.txt | sed -e 's/\.txt:/\t/g' | sed -e 's/__/\t/g' | sed -e 's/_/\t/g'
+```
+## Collect data for analysis (on ibex)
+Create a folder to store all the summary data:
+```{sh}
+cd /ibex/user/naras0c/key_taxa_ww/output
+mkdir -p summary_data
+```
+
+Obtain all the fasta IDs of the phages:
+```{sh}
+$ find /ibex/user/naras0c/key_taxa_ww/output/phage_databases -type f -name "*.gz" -print0 | xargs -0 -I{} sh -c 'zcat {} | grep "^>" | sed "s~^~{}: ~"' | sed -e 's/: >/\t/g' > summary_data/phage_fastaFilename2fastaID.tsv
+```
+
+Compile spacepharere (CRISPR-spacer matching) data:
+```{sh}
+cat spacepharer/*/predictions.tsv | grep -v "^#" > summary_data/spacepharer_spacer_alignment_results.tsv
+```
+
+```{sh}
+cat spacepharer/*/predictions.tsv | \grep "^#" | sed -e 's/^#//g' > summary_data/spacepharer_host_results.tsv
+```
+
+Collect CRISPR-Cas information for the the key taxa genomes:
+
+```{sh}
+grep -H "####Summary" host_crisprcasfinder/GC*/*/TSV/Cas_REPORT.tsv | sed -e 's/:####/\t/' | sed -e 's:host_crisprcasfinder/::g' | sed -e 's:/:\t:' | sed -s 's/:/\t/g' | cut -f 1,6 | awk -v OFS="\t" '{
+    printf "%s\t", $1;  # Print the file identifier with a trailing tab
+    $1="";  # Remove the file identifier from the line
+    gsub(/\[|\]/, "");  # Remove brackets
+    gsub(/\([^)]+\)/, "");  # Remove content within parentheses
+    gsub(/.*####Summary system CAS:.*: \[|\].*/, "");  # Strip leading and trailing parts (if still needed)
+    n = gsub(/cas[[:digit:]]+_Type[[:alnum:]_]+/, "&");  # Keep casX_TypeY patterns
+    gsub(/; /, OFS);  # Replace "; " with a tab
+    gsub(/;/, "");  # Remove remaining semicolons
+    print;  # Print the modified line
+}' > summary_data/crisprcasfinder_host_results.tsv
 ```

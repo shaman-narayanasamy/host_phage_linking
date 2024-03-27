@@ -232,7 +232,7 @@ blast2assembly2taxonomy_all %>%
 ```
 
 
-```{r plot_taxonomy}
+```{r plot_taxonomy, fig.height=2, fig.width=3}
 blast2assembly2taxonomy_all %>% 
   ggplot(aes(x = taxa, fill = taxa))+
   geom_bar() +
