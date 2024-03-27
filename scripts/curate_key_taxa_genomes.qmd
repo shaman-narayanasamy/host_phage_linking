@@ -8,7 +8,7 @@ execute:
   warning: false
   message: false
 params:
-  system_type: "sb"
+  system_type: "swbd"
 ---
 
 ```{r load_packages}
@@ -116,15 +116,9 @@ for (i in 1:nrow(blast_dat)){
 }
 ```
 
-```{r summarise_assemblies}
-blast_dat %>% filter(!is.na(assembly_id)) %>% 
-  filter(`% identity` >= 95) %>% 
-  select(assembly_id, system, taxonomic_level, taxa) %>% distinct() %>% 
-  group_by(taxonomic_level, taxa) %>% summarise(no_of_assemblies = n()) %>% 
-  knitr::kable(caption = "Summary of no of taxa")
-```
 
-```{r write_table}
+
+```{r write_table, eval = F}
 blast2assembly <- 
   blast_dat %>% filter(!is.na(assembly_id)) %>%
   write_tsv(
@@ -136,3 +130,116 @@ blast2assembly %>% select(assembly_id, taxonomic_level, taxa) %>% distinct() %>%
     paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", paste0(params$system_type, "_assembly_list.tsv"), sep = "")
     )
 ```
+
+```{r}
+blast2assembly <- 
+    read_tsv(
+    paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", paste0(params$system_type, "_blast2assembly.tsv"), sep = "")
+    )
+```
+
+
+
+```{r}
+# Check if 'blast2assembly2taxonomy' exists, if not, initialize it
+if(!exists("blast2assembly2taxonomy")) {
+  blast2assembly2taxonomy <- tibble(root_assembly_id = character(), taxid = character(), lineage = character())
+}
+
+root_assembly_ids <- blast2assembly %>% 
+  select(root_assembly_id) %>% 
+  distinct() %>% 
+  pull(root_assembly_id)
+
+
+for (i in root_assembly_ids) { 
+  # Check if the current root_assembly_id has already been processed
+  if(!(i %in% blast2assembly2taxonomy$root_assembly_id)) {
+    tryCatch({
+      tmp_summary <- entrez_summary(id = i, db = "nuccore")
+      tmp_fetch <- entrez_fetch(id = tmp_summary$taxid, db = "taxonomy", rettype = "xml")
+      tmp_lineage <- xml_find_all(read_xml(tmp_fetch), ".//Lineage") %>% xml_text()
+      
+      # Temporarily store the results
+      tmp_tibble <- tibble(root_assembly_id = i, taxid = as.character(tmp_summary$taxid), lineage = tmp_lineage)
+      
+      # Bind the results to the main dataframe
+      blast2assembly2taxonomy <- bind_rows(blast2assembly2taxonomy, tmp_tibble)
+      
+    }, error = function(e) {
+      message("Error processing ", i, ": ", e$message)
+    })
+  }
+}
+```
+
+```{r}
+## Since the root assembly ID does not work, we use an alternative ID, i.e. the contig ID of the blast subject.
+alternative_ids <- 
+filter(blast2assembly, !root_assembly_id %in% blast2assembly2taxonomy$root_assembly_id) %>% 
+  select(`subject acc.ver`, root_assembly_id)
+```
+
+```{r}
+for (i in 1:length(alternative_ids$`subject acc.ver`)){ 
+ 
+  subject_id = alternative_ids$`subject acc.ver`[i]
+
+  tmp_summary <- entrez_summary(id = subject_id, db = "nuccore")
+  
+  tmp_fetch <- entrez_fetch(id = tmp_summary$taxid, db = "taxonomy", rettype = "xml")
+  
+  tmp_lineage <- xml_find_all(tmp_fetch %>% read_xml(), ".//Lineage") %>% xml_text()
+  
+  if(i == 1){
+    tmp_alt <-  
+      bind_cols(`root_assembly_id` = alternative_ids$root_assembly_id[i], taxid = as.character(tmp_summary$taxid), lineage = tmp_lineage)
+  } else {
+  tmp_alt <- 
+  bind_rows(tmp_alt,  
+            bind_cols(`root_assembly_id` = alternative_ids$root_assembly_id[i], taxid = as.character(tmp_summary$taxid), lineage = tmp_lineage))
+  }
+  rm(tmp_summary, tmp_fetch, tmp_lineage)
+}
+
+```
+
+```{r}
+blast2assembly2taxonomy <- 
+  bind_rows(tmp_alt, blast2assembly2taxonomy) %>% 
+  mutate(lineage = str_remove_all(lineage, pattern = 'cellular organisms; '))
+```
+```{r write_taxonomy_inoformation, eval = F}
+blast2assembly2taxonomy_all <- 
+  left_join(blast2assembly, blast2assembly2taxonomy, by = "root_assembly_id")
+write_tsv(blast2assembly2taxonomy_all,  
+          paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", paste0(params$system_type, "_blast2assembly2taxonomy.tsv"), sep = "") 
+          )
+```
+
+```{r}
+blast2assembly2taxonomy_all <- 
+  read_tsv(paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", paste0(params$system_type, "_blast2assembly2taxonomy.tsv"), sep = "")  )
+```
+```{r plot_detailed_taxonomy, fig.height=8, fig.width=10}
+blast2assembly2taxonomy_all %>% 
+  ggplot(aes(x = lineage, fill = lineage))+
+  geom_bar() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        legend.position = "bottom") +
+  guides(fill = guide_legend(ncol = 1))
+```
+
+
+```{r plot_taxonomy}
+blast2assembly2taxonomy_all %>% 
+  ggplot(aes(x = taxa, fill = taxa))+
+  geom_bar() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        legend.position = "bottom") +
+  guides(fill=guide_legend(ncol =1))
+```
+
+

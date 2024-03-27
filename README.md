@@ -34,3 +34,12 @@ For saltwater desalination biofilm key taxa:
 ```{shell}
 quarto render /Users/shaman.narayanasamy/Work/repositories/github/key_taxa_ww/scripts/curate_key_taxa_genomes.qmd --to html -P system_type=swbd -o swbd_output.html --output-dir render
 ```
+
+## Summarising data
+### Summarise 16S sequences
+The 16S sequences were a product of a separate analyses. They were  shared as
+fasta files (with the extension `.txt`). Hence, we summarise the no. of sequences as follows:
+
+```{sh}
+grep -nc "^>" *.txt | sed -e 's/\.txt:/\t/g' | sed -e 's/__/\t/g' | sed -e 's/_/\t/g'
+```
