@@ -65,7 +65,7 @@ get_assembly_id <- function(subject_id =
 }
 ```
 
-```{r extract_related_assemblies}
+```{r extract_related_assemblies, eval = F}
 # Create an empty column
 blast_dat$assembly_id = NA
 
@@ -140,7 +140,7 @@ blast2assembly <-
 
 
 
-```{r}
+```{r link_genomes_to_taxonomy, eval = F}
 # Check if 'blast2assembly2taxonomy' exists, if not, initialize it
 if(!exists("blast2assembly2taxonomy")) {
   blast2assembly2taxonomy <- tibble(root_assembly_id = character(), taxid = character(), lineage = character())
@@ -171,16 +171,12 @@ for (i in root_assembly_ids) {
     })
   }
 }
-```
 
-```{r}
 ## Since the root assembly ID does not work, we use an alternative ID, i.e. the contig ID of the blast subject.
 alternative_ids <- 
 filter(blast2assembly, !root_assembly_id %in% blast2assembly2taxonomy$root_assembly_id) %>% 
   select(`subject acc.ver`, root_assembly_id)
-```
 
-```{r}
 for (i in 1:length(alternative_ids$`subject acc.ver`)){ 
  
   subject_id = alternative_ids$`subject acc.ver`[i]
@@ -202,44 +198,91 @@ for (i in 1:length(alternative_ids$`subject acc.ver`)){
   rm(tmp_summary, tmp_fetch, tmp_lineage)
 }
 
-```
-
-```{r}
+## Clean up the lineage text
 blast2assembly2taxonomy <- 
   bind_rows(tmp_alt, blast2assembly2taxonomy) %>% 
   mutate(lineage = str_remove_all(lineage, pattern = 'cellular organisms; '))
 ```
+
 ```{r write_taxonomy_inoformation, eval = F}
 blast2assembly2taxonomy_all <- 
   left_join(blast2assembly, blast2assembly2taxonomy, by = "root_assembly_id")
+
 write_tsv(blast2assembly2taxonomy_all,  
           paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", paste0(params$system_type, "_blast2assembly2taxonomy.tsv"), sep = "") 
           )
+
+blast2assembly2taxonomy_all %>% 
+  filter(`% identity` >= 95) %>% 
+write_tsv(paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", paste0(params$system_type, "_blast2assembly2taxonomy-95%identity.tsv"), sep = "") 
+          )
+
+blast2assembly2taxonomy_all %>% 
+  filter(`% identity` >= 95) %>% select(`query acc.ver`) %>% distinct()
 ```
 
-```{r}
+```{r read_taxonomy_information}
 blast2assembly2taxonomy_all <- 
-  read_tsv(paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", paste0(params$system_type, "_blast2assembly2taxonomy.tsv"), sep = "")  )
+bind_rows(
+  read_tsv("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/sb_blast2assembly2taxonomy.tsv"),
+  read_tsv("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/swbd_blast2assembly2taxonomy.tsv")
+)
 ```
-```{r plot_detailed_taxonomy, fig.height=8, fig.width=10}
-blast2assembly2taxonomy_all %>% 
-  ggplot(aes(x = lineage, fill = lineage))+
-  geom_bar() +
-  theme_bw() +
-  theme(axis.text.x = element_blank(),
-        legend.position = "bottom") +
-  guides(fill = guide_legend(ncol = 1))
+```{r define_refined_taxonomy, fig.height=6, fig.width=8}
+set.seed(125) # Setting a seed for reproducibility
+
+# Split to a refine taxonomy information table
+refined_taxonomy_info <- 
+  blast2assembly2taxonomy_all %>% 
+  select(assembly_id, lineage, taxa, system) %>% 
+  distinct() %>% 
+  separate(lineage, into = c( 
+    "kingdom",
+    "phylum",
+    "class",
+    "order",
+    "family",
+    "genus",
+    "species"), fill = "right", sep = '; ', remove = F) %>% 
+  mutate_at(vars(c( 
+    "kingdom",
+    "phylum",
+    "class",
+    "order",
+    "family",
+    "genus",
+    "species")), as.factor) %>% 
+  mutate(genus = factor(genus, levels = sample(levels(.$genus))))
 ```
 
 
-```{r plot_taxonomy, fig.height=2, fig.width=3}
-blast2assembly2taxonomy_all %>% 
-  ggplot(aes(x = taxa, fill = taxa))+
+```{r plot_detailed_taxonomy, fig.height=6, fig.width=8}
+refined_taxonomy_info %>% 
+  ggplot(aes(x = taxa, fill = genus))+
   geom_bar() +
+  facet_wrap(~ system, scale = "free_x") +
   theme_bw() +
-  theme(axis.text.x = element_blank(),
-        legend.position = "bottom") +
-  guides(fill=guide_legend(ncol =1))
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        legend.position = "right") +
+  xlab("Host taxa based on 16S assignment") +
+  scale_fill_viridis_d(option = "D", begin = 0, end = 1, direction = 1, name = "Lineage") + # Discrete color scale for lineage
+  guides(fill = guide_legend(ncol = 1, title = "Host lineage based on NCBI"))
+```
+
+
+```{r plot_taxonomy, fig.height=5, fig.width=5}
+# Create a named list for the Venn diagram
+venn_list <- list(
+  sb = refined_taxonomy_info %>% filter(system == "sb") %>% pull(lineage) %>% unique(),
+  swbd = refined_taxonomy_info %>% filter(system == "swbd") %>% pull(lineage) %>% unique()
+)
+
+# Find the intersection manually to ensure there is overlap
+common_ids <- Reduce(intersect, venn_list)
+length(common_ids)  # 0 if there is no overlap
+
+# Generate the Venn diagram with the cleaned data
+ggvenn(venn_list, stroke_color = NA, auto_scale = T)
 ```
 
 
