@@ -1,0 +1,404 @@
+---
+title: "Phage and host linking"
+format: html
+editor: source
+execute:
+  echo: false 
+  warning: false
+  message: false
+---
+
+```{r load_packages}
+library(tidyverse)
+library(ggvenn)
+library(igraph)
+library(ggraph)
+library(RColorBrewer)
+library(rentrez)
+library(xml2)
+library(ggrepel)
+library(RColorBrewer)
+library(viridis)
+library(scales)
+```
+
+```{r load_data}
+genome2taxa <- 
+  bind_rows(paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", "sb", "_blast2assembly2taxonomy.tsv", sep = "") %>%  
+  read_tsv() %>% 
+  filter(`% identity` >= 95) %>% 
+  mutate(system = "sb"), 
+  paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", "swbd", "_blast2assembly2taxonomy.tsv", sep = "") %>% 
+  read_tsv() %>% 
+  filter(`% identity` >= 95) %>% 
+    mutate(system = "swbd")
+) %>% 
+  select(assembly_id, taxonomic_level, taxa, lineage, is_mag, system) %>% 
+  distinct()
+```
+
+```{r load_data}
+## Read the CRISPR links between hosts and phages from spacepharer
+phage2host <- 
+  read_tsv("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/summary_data/spacepharer_host_results.tsv", col_names = F) %>% 
+  # Header: prokaryotic accession, phage accession, combined score and number of hits in the match
+  select(assembly_id = X1, phage_id = X2, score = X3, no_of_hits = X4) %>% 
+  mutate(assembly_id = str_remove(assembly_id, "\\.out$")) %>% # Remove .out at the end
+  mutate(assembly_id = str_remove(assembly_id, "\\.txt$")) %>% # Remove .txt at the end
+  filter(assembly_id %in% genome2taxa$assembly_id) %>%  
+  arrange(desc(no_of_hits), desc(score)) %>%  # Organise by higher no. of hits and scores
+  distinct(assembly_id, phage_id, .keep_all = TRUE)
+```
+
+```{r}
+## Read the mapping between phages and their respective database (self generated)
+db2phage <-  
+  read_tsv("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/summary_data/phage_fastaFilename2fastaID.tsv", col_names = F) %>%
+  select(path = X1, phage_id = X2) %>% 
+  separate(path, remove = T, into = paste0("X", as.character(seq(1, 10))), fill = "right", sep ='/') %>% 
+  select(phage_db = X8, phage_id) 
+```
+
+
+```{r ncbi_phage_taxonomy_function, eval = F}
+get_taxonomy_information <- function(subject_id = "MH617049.1") {
+  
+  print(subject_id)
+  
+  # Error handling for entrez_link
+  tryCatch({
+    all_links <- entrez_link(dbfrom = "nuccore", db = "all", id = subject_id)
+  }, error = function(e) {
+    message("Error with entrez_link for ID: ", subject_id, "\nError message: ", e$message)
+    return(NA)
+  })
+  
+  if (is.null(all_links$links$nuccore_assembly) || length(all_links$links$nuccore_assembly) == 0) {
+    return(bind_cols(subject_id = subject_id, taxid = NA, lineage = NA))
+  }
+  
+  # Error handling for entrez_summary
+  tryCatch({
+    all_summary <- entrez_summary(id = all_links$links$nuccore_assembly, db = "assembly")
+  }, error = function(e) {
+    message("Error with entrez_summary for ID: ", subject_id, "\nError message: ", e$message)
+    return(NA)
+  })
+  
+  if (is.null(all_summary$speciestaxid) || length(all_summary$speciestaxid) == 0) {
+    return(bind_cols(subject_id = subject_id, taxid = NA, lineage = NA))
+  }
+  
+  # Error handling for entrez_fetch
+  tryCatch({
+    taxonomy_fetch <- entrez_fetch(id = all_summary$speciestaxid, db = "taxonomy", rettype = "xml")
+  }, error = function(e) {
+    message("Error with entrez_fetch for ID: ", subject_id, "\nError message: ", e$message)
+    return(NA)
+  })
+  
+  taxonomy_fetch_parsed <- read_xml(taxonomy_fetch)
+  
+  taxonomy_division <- xml_find_all(taxonomy_fetch_parsed, ".//Division") %>% xml_text()
+  taxonomy_ranks <- xml_find_all(taxonomy_fetch_parsed, ".//Rank") %>% xml_text()
+  taxonomy_lineage <- xml_find_all(taxonomy_fetch_parsed, ".//Lineage") %>% xml_text()
+  
+  return(bind_cols(subject_id = subject_id, taxid = all_summary$speciestaxid, lineage = taxonomy_lineage))
+}
+
+```
+
+```{r get_taxonomy_ncbi, eval = F}
+# Check if 'ncbi_phage_info' exists, if not, initialize it
+if(!exists("ncbi_phage_info")) {
+  ncbi_phage_info <- 
+    tibble(subject_id = character(), taxid = character(), lineage = character())
+}
+
+root_assembly_ids <- 
+  phage2host %>% select(phage_id) %>%  distinct() %>% pull(phage_id)
+
+root_assembly_ids %in% "MG969411.1"
+
+## This loop need to be run multiple times if the API fails for some instances
+for (i in root_assembly_ids) { 
+  # Check if the current subject_id has not been processed or if it has been processed but the taxid is NA
+  if(!(i %in% ncbi_phage_info$subject_id) || any(is.na(ncbi_phage_info$taxid[ncbi_phage_info$subject_id == i]))) {
+    tryCatch({
+      tmp <- get_taxonomy_information(subject_id = i)
+     
+      # If tmp is not an empty tibble, bind the results to the main dataframe
+      if(nrow(tmp) > 0) {
+        ncbi_phage_info <- bind_rows(ncbi_phage_info, tmp)
+      }
+      
+    }, error = function(e) {
+      message("Error processing ", i, ": ", e$message)
+    })
+  }
+}
+
+# After the loop, optionally remove duplicate rows if any
+ncbi_phage_info <- 
+  ncbi_phage_info %>% distinct(subject_id, .keep_all = TRUE) %>% 
+  mutate(phage_db = case_when( 
+    is.na(taxid) ~ "RVMT_RV20",  
+    TRUE ~ "spacepharer_ncbi")
+  )
+```
+
+```{r get_taxonomy_riboviria, eval = F}
+rna_phages <- 
+  ncbi_phage_info %>% 
+  filter(phage_db == "RVMT_RV20") %>% 
+  select(subject_id) %>% 
+  distinct(subject_id) %>%  pull(subject_id)
+
+riboviria_info <-  
+  read_tsv("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/summary_data/RiboV1.6_Info.tsv") %>% 
+  rename(phage_id = Full_name) %>%  
+  filter(phage_id %in% rna_phages) %>% 
+  select(subject_id = phage_id, Phylum, Class, Family, Order, Genus) %>%  
+  mutate(lineage = paste("Riboviria", "Orthornavirae", Phylum, Class, Order, Family, Genus, NA, sep = ';'), taxid = NA) %>% 
+  select(subject_id, taxid, lineage)
+
+## Join the NCBI and the riboviria phage_information tables
+phage_info <- 
+  bind_rows(ncbi_phage_info %>% filter(!is.na(taxid)), riboviria_info %>% mutate(phage_db = "RVMT_RV20"))
+```
+
+
+```{r link_data}
+## Include all the complementary information for hosts and phages 
+phage2host_info <- 
+  read_tsv("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/summary_data/CRISPR_target_phage_info.tsv") %>% 
+  right_join(phage2host,  by = c("subject_id" = "phage_id")) %>% 
+  select(phage_id = subject_id, phage_lineage = lineage, phage_taxid = taxid, everything()) %>% 
+  left_join(genome2taxa, by = "assembly_id") %>% 
+  mutate(phage_type = case_when( 
+    phage_db == "RVMT_RV20" ~ "RNA phage",  
+    TRUE ~ "DNA phage")
+  )
+```
+
+
+```{r write_link_data, eval = F}
+write_tsv(phage2host_info, "/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/summary_data/phage2host_all_info.tsv")
+```
+
+```{r read_phage_info}
+phage2host_info <- read_tsv("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/summary_data/phage2host_all_info.tsv")
+```
+
+```{r write_host_summary, eval=F}
+phage2host_info %>% 
+  select(assembly_id, phage_id, phage_db, lineage, taxa, system) %>% 
+  distinct() %>% 
+  group_by(assembly_id, lineage, taxa, system) %>% 
+  summarise(no_of_links = n()) %>% 
+  ungroup() %>% 
+  arrange(system, desc(no_of_links)) %>% 
+  write_tsv("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/summary_data/CRISPR_targeting_hosts_info.tsv")
+```
+```{r refine_host_taxonomy_info}
+refined_host_taxonomy_info <- 
+  phage2host_info %>%   
+  select(assembly_id, lineage, taxa, system) %>% 
+  distinct() %>% 
+  separate(lineage, into = c( 
+    "kingdom",
+    "phylum",
+    "class",
+    "order",
+    "family",
+    "genus",
+    "species"), fill = "right", sep = '; ', remove = F) %>% 
+  mutate_at(vars(c( 
+    "kingdom",
+    "phylum",
+    "class",
+    "order",
+    "family",
+    "genus",
+    "species")), as.factor) %>% 
+  mutate(genus = factor(genus, levels = sample(levels(.$genus))))
+```
+
+```{r plot_sb_host_taxonomy, fig.height=4, fig.width=8}
+refined_taxonomy_info %>%   
+  select(assembly_id, taxa, genus = genus, system) %>% 
+  distinct() %>% 
+  ggplot(aes(x = taxa, fill = genus))+
+  geom_bar() +
+  facet_wrap(~ system, scales = "free_x") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        legend.position = "right") +
+  xlab("Host taxa based on 16S assignment") +
+  scale_fill_viridis_d(option = "D", begin = 0, end = 1, direction = 1, name = "Genus") + # Discrete color scale for lineage
+  guides(fill = guide_legend(ncol = 1, title = "Host lineage based on NCBI"))
+```
+
+```{r write_host_summary, eval=F}
+phage2host_info %>% 
+  select(assembly_id, phage_id, phage_db, lineage = phage_lineage, system) %>% 
+  distinct() %>% 
+  group_by(phage_id, lineage, system, phage_db) %>% 
+  summarise(no_of_links = n()) %>% 
+  ungroup() %>% 
+  arrange(system, desc(no_of_links)) %>% 
+  write_tsv("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/summary_data/CRISPR_targeted_phages_info.tsv") 
+```
+
+```{r venn_diagram_unique}
+# Create a named list for the Venn diagram
+venn_list <- list(
+  sb = phage2host_info %>% filter(system == "sb") %>% pull(phage_id) %>% unique(),
+  swbd = phage2host_info %>% filter(system == "swbd") %>% pull(phage_id) %>% unique(),
+  RNA = phage2host_info %>% filter(phage_type == "RNA phage") %>% pull(phage_id) %>% unique(),
+  DNA = phage2host_info %>% filter(phage_type == "DNA phage") %>% pull(phage_id) %>% unique()
+)
+
+# Find the intersection manually to ensure there is overlap
+common_ids <- Reduce(intersect, venn_list)
+length(common_ids)  # 0 if there is no overlap
+
+# Generate the Venn diagram with the cleaned data
+ggvenn(venn_list, stroke_color = NA)
+```
+
+```{r venn_diagram_host_lineage}
+# Create a named list for the Venn diagram
+venn_list <- list(
+  sb = phage2host_info %>% filter(system == "sb") %>% pull(lineage) %>% unique(),
+  swbd = phage2host_info %>% filter(system == "swbd") %>% pull(lineage) %>% unique(),
+  RNA = phage2host_info %>% filter(phage_type == "RNA phage") %>% pull(lineage) %>% unique(),
+  DNA = phage2host_info %>% filter(phage_type == "DNA phage") %>% pull(lineage) %>% unique()
+)
+
+# Find the intersection manually to ensure there is overlap
+common_ids <- Reduce(intersect, venn_list)
+length(common_ids)  # 0 if there is no overlap
+
+# Generate the Venn diagram with the cleaned data
+ggvenn(venn_list, stroke_color = NA)
+```
+
+```{r refine_phage_taxonomy_info}
+refined_phage_taxonomy_info <- 
+  phage2host_info %>%   
+  select(phage_id, lineage = phage_lineage, taxa, system) %>% 
+  distinct() %>% 
+  separate(lineage, into = c( 
+    "realm",
+    "kingdom",
+    "phylum",
+    "class",
+    "order",
+    "family",
+    "genus",
+    "species"), fill = "right", sep = ';', remove = F) %>% 
+  mutate_at(vars(c( 
+    "realm",
+    "kingdom",
+    "phylum",
+    "class",
+    "order",
+    "family",
+    "genus",
+    "species")), as.factor) %>% 
+  mutate(genus = factor(genus, levels = sample(levels(.$genus))))
+```
+```{r plot_phage_taxonomy, fig.height=4, fig.width=5}
+refined_phage_taxonomy_info %>%   
+  ggplot(aes(x = taxa, fill = family))+
+  geom_bar() +
+  facet_wrap(~ system, scales = "free_x") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        legend.position = "right") +
+  xlab("Host taxa based on 16S assignment") +
+  scale_fill_viridis_d(option = "d", begin = 0, end = 1, direction = 1, name = "family") + # discrete color scale for family
+  guides(fill = guide_legend(ncol = 1))
+```
+
+
+```{r venn_diagram_host_lineage, fig.width=5, fig.height=5}
+# Create a named list for the Venn diagram
+venn_list <- list(
+  sb = refined_phage_taxonomy_info %>% filter(system == "sb") %>% pull(family) %>% unique(),
+  swbd = refined_phage_taxonomy_info %>% filter(system == "swbd") %>% pull(family) %>% unique()
+)
+
+# Find the intersection manually to ensure there is overlap
+common_ids <- Reduce(intersect, venn_list)
+length(common_ids)  # 0 if there is no overlap
+
+# Generate the Venn diagram with the cleaned data
+ggvenn(venn_list, stroke_color = NA, auto_scale = T)
+```
+
+```{r plot_network_function, fig.height=12, fig.width=10}
+plot_network = function(data_of_links, system_of_interest = "sb") { 
+  link_data <- data_of_links
+  
+  reduced_link_data <- 
+    link_data %>%
+    filter(system == system_of_interest)
+
+  node_info <- 
+    bind_rows(   
+    select(reduced_link_data, id = assembly_id, taxa, lineage) %>% mutate(type = "Host"),  
+    select(reduced_link_data, id = phage_id, lineage = phage_lineage, type = phage_type) %>% mutate(taxa = "Phage") 
+    ) %>% 
+    mutate(lineage = factor(lineage))
+  
+  unique_hits <- 
+    unique(reduced_link_data$no_of_hits)
+    
+  scaled_hit_widths <- 
+    seq(1, 3, length.out = length(unique_hits))
+  
+ width_mapping <- setNames(scaled_hit_widths, unique_hits)
+  
+# Create an edge list for the network
+  edge_list <- 
+    as.data.frame(reduced_link_data %>% 
+                    select(assembly_id, phage_id, score, no_of_hits, taxa, lineage, phage_lineage) %>% 
+                    mutate(no_of_hits = factor(no_of_hits))) 
+                  
+  # Create a graph from the edge list
+  graph <- graph_from_data_frame(edge_list, directed = TRUE)
+  
+  V(graph)$taxa <- node_info$taxa[match(V(graph)$name, node_info$id)]
+  V(graph)$type <- node_info$type[match(V(graph)$name, node_info$id)]
+  V(graph)$lineage <- node_info$lineage[match(V(graph)$name, node_info$id)]
+  
+  # Plot the network
+  ggraph(graph, layout = "fr") +
+    geom_edge_arc(aes(edge_width = no_of_hits, colour = score), strength =  0.2, size  = 0.5) +
+    geom_node_point(aes(colour = lineage, shape = type, size = type), stroke = 2) +
+    geom_node_text( 
+      aes(label = name, colour = lineage), 
+      size = 3,  # Adjust text size
+      nudge_x = 0.25, nudge_y = 0.25,  # Adjust text position
+      box.padding = unit(0.35, "lines"),  # Adjust the padding around the text
+      point.padding = unit(0.3, "lines")  # Adjust padding around the associated point  
+      ) + 
+    scale_size_manual(values = c("Host" = 10, "DNA phage" = 5, "RNA phage" = 5)) +
+    scale_shape_manual(values = c("Host" = 16, "DNA phage" = 18, "RNA phage" = 15)) + 
+    scale_color_viridis_d(option = "D", begin = 0, end = 1, direction = 1, name = "Lineage") + # Discrete color scale for lineage
+    scale_edge_color_gradient(low = "gray75", high = "gray10", name = "Score") + # Continuous color scale for score 
+    scale_edge_width_manual(values = width_mapping) + # Adjust edge widths
+
+    theme_graph() +
+    guides(colour = guide_legend(ncol = 1,  
+                                 position = "bottom"))
+}
+```
+```{r sb_network, fig.height = 12, fig.width=10}
+plot_network(phage2host_info, "sb")
+```
+```{r swbd_network, fig.height = 12, fig.width=10}
+plot_network(phage2host_info, "swbd")
+```

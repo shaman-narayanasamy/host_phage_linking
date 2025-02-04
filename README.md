@@ -35,7 +35,15 @@ For saltwater desalination biofilm key taxa:
 quarto render /Users/shaman.narayanasamy/Work/repositories/github/key_taxa_ww/scripts/curate_key_taxa_genomes.qmd --to html -P system_type=swbd -o swbd_output.html --output-dir render
 ```
 
-## Collect data for analysis
+## Summarising data for analysis
+### Summarise 16S sequences
+The 16S sequences were a product of a separate analyses. They were  shared as
+fasta files (with the extension `.txt`). Hence, we summarise the no. of sequences as follows:
+
+```{sh}
+grep -nc "^>" *.txt | sed -e 's/\.txt:/\t/g' | sed -e 's/__/\t/g' | sed -e 's/_/\t/g'
+```
+## Collect data for analysis (on ibex)
 Create a folder to store all the summary data:
 ```{sh}
 cd /ibex/user/naras0c/key_taxa_ww/output
@@ -57,7 +65,6 @@ cat spacepharer/*/predictions.tsv | \grep "^#" | sed -e 's/^#//g' > summary_data
 ```
 
 Collect CRISPR-Cas information for the the key taxa genomes:
-
 
 ```{sh}
 grep -H "####Summary" host_crisprcasfinder/GC*/*/TSV/Cas_REPORT.tsv | sed -e 's/:####/\t/' | sed -e 's:host_crisprcasfinder/::g' | sed -e 's:/:\t:' | sed -s 's/:/\t/g' | cut -f 1,6 | awk -v OFS="\t" '{
