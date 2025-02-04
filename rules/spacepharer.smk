@@ -5,6 +5,10 @@ rule spacepharer:
         phage_db_dir  = "spacepharer_dbs/{phage_db_id}"
     output:
         predictions = "spacepharer/{host_id}-x-{phage_db_id}/predictions.tsv"
+    resources: 
+        cpus_per_task = 12,
+        runtime = 7200,
+        mem = "200GB"
     conda: "../envs/spacepharer_env.yml"
     benchmark: "spacepharer/{host_id}-x-{phage_db_id}/benchmarks/spacepharer.txt"
     log: "spacepharer/{host_id}-x-{phage_db_id}/logs/spacepharer.txt"
@@ -20,7 +24,9 @@ rule spacepharer:
     	    spacepharer easy-predict {input.host_pilercr_crispr} \
             {input.host_minced_crispr} \
             {input.phage_db_dir}/targetSetDb {output} \
-            {tmp_dir}/tmpFolder/{wildcards.host_id}-x-{wildcards.phage_db_id}
+            {tmp_dir}/tmpFolder/{wildcards.host_id}-x-{wildcards.phage_db_id} \
+            --threads {resources.cpus_per_task}
+
         else
             touch {output}
         fi

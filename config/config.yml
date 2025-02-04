@@ -11,6 +11,9 @@ gtdbtk:
 virhostmatcher:
   script: "/home/naras0c/repositories/github/VirHostMatcher/vhm.py"
 
+WIsH:
+  sif_path: "/ibex/user/naras0c/WIsH/WIsH.sif"
+
 genomad:
   db: "/ibex/reference/KSL/genomad/v1.5/genomad_db"
   threads: 24

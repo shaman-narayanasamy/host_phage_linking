@@ -8,28 +8,30 @@ output_dir = config["output_dir"]
 
 ## Define input files
 
-# Read the host taxa directories
-#host_dirs = pd.read_table(config["host_taxa_table"], sep="\t", comment = "#").set_index("ID", drop=False)
-
 # Read the host genome table (individually listed)
 hosts = pd.read_table(config["host_table"], sep="\t", comment = "#").set_index("ID", drop=False)
 
 # Read the phage table
 phage_dbs = pd.read_table(config["phage_db_table"], sep="\t", comment = "#").set_index("ID", drop=False)
 
+print("Available phage_db_ids:", list(phage_dbs.index))
+
 workdir:
     output_dir
 
 include:
-    "../rules/split_phage_sequences.smk"
+    "../rules/genomad.smk"
 
 include:
-    "crispr_links.smk"
+    "../rules/makeblastdb_host_genomes.smk"
 
 include:
-    "nucleotide_identity.smk"
+    "../rules/blastn_nucleotide_identity.smk"
 
-rule all:
-    input: 
-        "crispr_links.done",
-        "nucleotide_identity.done",
+rule nucleotide_identity_all:
+     input:
+        "concatenated_hosts.fasta",
+        "makeblastdb_hosts.done",
+        expand("{phage_db_id}/results/hosts/final_blast.tsv", phage_db_id = phage_dbs.index),
+        expand("genomad/{host_id}/provirus", host_id = hosts.index)
+     output: touch("nucleotide_identity.done")
