@@ -15,17 +15,13 @@ rule genomad:
     log: "host_genomad/logs/{host_id}.txt"
     shell:
        """
-       genomad annotate --input {input.host_fasta} --restart \
-       --output {output.annotate_outdir} --database {params.db} \
+       genomad annotate {input.host_fasta} \
+       {output.annotate_outdir} {params.db} \
        --conservative-taxonomy --threads {resources.cpus_per_task} \
        --restart --cleanup
        
-       genomad find-proviruses --input {output.annotate_outdir} \
-       --output {output.provirus_outdir} --threads {resources.cpus_per_task} \
+       genomad find-proviruses {output.annotate_outdir} \
+       {output.provirus_outdir} {params.db} \
+       --threads {resources.cpus_per_task} \
        --restart --cleanup
        """
-
-#       genomad end-to-end -t {params.threads} \
-#       --cleanup --restart {input.host_fasta} {output} {params.db}
-
-

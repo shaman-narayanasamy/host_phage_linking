@@ -1,6 +1,6 @@
 rule concatenate_spacers:
     input:
-        expand("host_crisprcasfinder/{host_id}/{host_id}/rawCRISPRs.fna", 
+        expand("host_crisprcasfinder/{host_id}/rawCRISPRs.fna", 
         host_id = hosts.index)
     output:
         concatenated_fasta = "concatenated_spacers.fasta"
@@ -35,5 +35,3 @@ rule make_blast_db_spacers:
             return 0
         }}
         """
-
-

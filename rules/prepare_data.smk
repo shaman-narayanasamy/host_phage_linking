@@ -13,7 +13,8 @@ rule split_phage_fasta:
     input:
         multi_fasta = lambda wildcards: phage_dbs.loc[wildcards.phage_db_id, "path"],
     output:
-        output_dir = directory("phage_databases/{phage_db_id}"),
+        output_dir = directory(os.path.join(config["outdir"]["spacepharer_db"], 
+                     "{phage_db_id}"))
     conda: "../envs/seqkit_env.yml"
     resources: 
         cpus_per_task = 12,

@@ -4,7 +4,7 @@ import pandas as pd
 tmp_dir = os.environ.get("tmp_dir", config['tmp_dir'])
 
 ## Define output directory
-output_dir = config["output_dir"]
+#output_dir = config["output_dir"]
 
 ## Define input files
 
@@ -46,12 +46,14 @@ include:
 
 rule crispr_links_all:
      input:
-        expand("phage_databases/{phage_db_id}", phage_db_id = phage_dbs.index),
-        expand("spacepharer_dbs/{phage_db_id}", phage_db_id = phage_dbs.index),
+        #expand("phage_databases/{phage_db_id}", phage_db_id = phage_dbs.index),
+        #expand("spacepharer_dbs/{phage_db_id}", phage_db_id = phage_dbs.index),
+        expand(os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}"), phage_db_id = phage_dbs.index),
         expand("host_pilercr/{host_id}.out", host_id = hosts.index),
         expand("host_minced/{host_id}.txt", host_id = hosts.index),
         expand("spacepharer/{host_id}-x-{phage_db_id}/predictions.tsv", phage_db_id = phage_dbs.index, host_id = hosts.index),
-        expand("host_crisprcasfinder/{host_id}/{host_id}/rawCRISPRs.fna", host_id = hosts.index),
+        #expand("host_crisprcasfinder/{host_id}/{host_id}/rawCRISPRs.fna", host_id = hosts.index),
+        expand("host_crisprcasfinder/{host_id}/rawCRISPRs.fna", host_id = hosts.index),
         "makeblastdb_spacers.done",
         expand("{phage_db_id}/results/spacers/final_blast.tsv", phage_db_id = phage_dbs.index)
      output: touch("crispr_links.done")

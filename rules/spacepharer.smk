@@ -2,7 +2,9 @@ rule spacepharer:
     input:
         host_pilercr_crispr = "host_pilercr/{host_id}.out",
         host_minced_crispr = "host_minced/{host_id}.txt",
-        phage_db_dir  = "spacepharer_dbs/{phage_db_id}"
+        #phage_db_dir  = "spacepharer_dbs/{phage_db_id}"
+        #phage_db_dir  = os.path.join(config["outdir"]["spacepharer_dbs"]/{phage_db_id}")
+        phage_db_dir  = os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}")
     output:
         predictions = "spacepharer/{host_id}-x-{phage_db_id}/predictions.tsv"
     resources: 

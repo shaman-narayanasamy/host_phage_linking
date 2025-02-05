@@ -1,9 +1,13 @@
 rule create_spacepharer_db:
     input:
-        input_dir = "phage_databases/{phage_db_id}"
+        input_dir = os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}")
     output:
-        output_dir  = directory("spacepharer_dbs/{phage_db_id}")
+        output_dir  = directory(os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}"))
     conda: "../envs/spacepharer_env.yml"
+    resources:
+         cpus_per_task = 40,
+         mem = "120GB",
+         runtime = 7200
     benchmark: "spacepharer_dbs/benchmarks/{phage_db_id}_create_spacepharer_db.txt"
     log: "spacepharer_dbs/logs/{phage_db_id}_create_spacepharer_db.log"
     shell:
@@ -11,10 +15,15 @@ rule create_spacepharer_db:
          mkdir -p {output.output_dir}
          mkdir -p {tmp_dir}/{wildcards.phage_db_id}/tmpFolder
          mkdir -p {tmp_dir}/{wildcards.phage_db_id}/tmpFolder_rev
-
-	 spacepharer createsetdb phage_databases/{wildcards.phage_db_id}/*.gz \
+         
+         find {input.input_dir} -name "*.gz" |
+         xargs -n 100 -P 10 -I{{}} \
+         spacepharer createsetdb --threads 4 {{}} \
          {output.output_dir}/targetSetDb {tmp_dir}/{wildcards.phage_db_id}/tmpFolder
 
-	 spacepharer createsetdb phage_databases/{wildcards.phage_db_id}/*.gz \
-         {output.output_dir}/targetSetDb_rev {tmp_dir}/{wildcards.phage_db_id}/tmpFolder_rev --reverse-fragments 1
+         find {input.input_dir} -name "*.gz" |
+         xargs -n 100 -P 10 -I{{}} \
+	 spacepharer createsetdb --threads 4 {{}} \
+         {output.output_dir}/targetSetDb_rev \
+         {tmp_dir}/{wildcards.phage_db_id}/tmpFolder_rev --reverse-fragments 1
          """
