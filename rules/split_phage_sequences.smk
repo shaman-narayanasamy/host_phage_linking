@@ -10,11 +10,12 @@ rule split_fasta:
         runtime = 7200,
         mem = "100GB"
     conda: "../envs/seqkit_env.yml"
+    benchmark: "benchmarks/{phage_db_id}/split_fasta.txt"
     shell:
         """
         seqkit split {input.fasta} --by-part {params.splits} \
         --out-dir {wildcards.phage_db_id}/chunks --force -j {resources.cpus_per_task}
-         
+
         for file in {wildcards.phage_db_id}/chunks/part_*.fasta; do
             # Extract the numeric part, removing leading zeros
             num=$(basename "$file" | sed -E 's/part_0*([0-9]+)\.fasta/\\1/')
@@ -46,4 +47,3 @@ rule check_chunk:
             exit 1
         fi
         """ 
-
