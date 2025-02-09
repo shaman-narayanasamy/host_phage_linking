@@ -4,9 +4,10 @@
 
 rule crisprcasfinder:
     input:
-        host_fasta = lambda wildcards: hosts.loc[wildcards.host_id, "path"]
+        host_fasta = lambda wildcards: hosts.loc[wildcards.host_id, "path"],
     output:
-        output = "host_crisprcasfinder/{host_id}/rawCRISPRs.fna"
+        output = "host_crisprcasfinder/{host_id}/results.json",
+        rawCRISPRs = "host_crisprcasfinder/{host_id}/rawCRISPRs.fna"
     resources: 
         cpus_per_task = 4,
         runtime = 2880,
@@ -25,4 +26,7 @@ rule crisprcasfinder:
        
        mv {params.outdir}/{wildcards.host_id}/{wildcards.host_id}/* {params.outdir}/{wildcards.host_id}
        rm -rf {params.outdir}/{wildcards.host_id}/{wildcards.host_id}
+       
+       # Ensure rawCRISPRs.fna exists, even if empty
+       touch {output.rawCRISPRs}
        """

@@ -6,20 +6,20 @@ rule concatenate_spacers:
         concatenated_fasta = "concatenated_spacers.fasta"
     shell:
         """
-        cat {input} > {output}
+        cat $(find host_crisprcasfinder -name "rawCRISPRs.fna" -size +0) > {output}
         """
 
 rule make_blast_db_spacers:
     input:
         concatenated_fasta = "concatenated_spacers.fasta"
     output:
-        donefile = touch("makeblastdb_spacers.done")
+        donefile = touch("blast/makeblastdb_spacers.done")
     resources: 
         runtime = 7200,
         mem = "120GB"
     conda: "../envs/blast_env.yml"
     params:
-        db_prefix = "concatenated_seqs_db",
+        db_prefix = "concatenated_spacers",
     benchmark: "benchmarks/make_blast_db.txt"
     shell:
         """

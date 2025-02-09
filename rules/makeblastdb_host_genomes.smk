@@ -12,13 +12,13 @@ rule make_blast_db_host_genomes:
     input:
         concatenated_fasta = "concatenated_hosts.fasta"
     output:
-        donefile = touch("makeblastdb_hosts.done")
+        donefile = touch("blast/makeblastdb_hosts.done")
     resources: 
         runtime = 7200,
         mem = "120GB"
     conda: "../envs/blast_env.yml"
     params:
-        db_prefix = "concatenated_seqs_db",
+        db_prefix = "concatenated_hosts",
     benchmark: "benchmarks/make_blast_db.txt"
     shell:
         """

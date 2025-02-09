@@ -31,7 +31,7 @@ include:
 rule nucleotide_identity_all:
      input:
         "concatenated_hosts.fasta",
-        "makeblastdb_hosts.done",
-        expand("{phage_db_id}/results/hosts/final_blast.tsv", phage_db_id = phage_dbs.index),
-        expand("genomad/{host_id}/provirus", host_id = hosts.index)
+        "blast/makeblastdb_hosts.done",
+        expand("blast/{phage_db_id}/results/hosts/final_blast.tsv", phage_db_id = phage_dbs.index),
+        expand("host_genomad/{host_id}/genomic_find_proviruses/genomic_find_proviruses.json", host_id = hosts.index)
      output: touch("nucleotide_identity.done")
