@@ -13,10 +13,10 @@ rule split_fasta:
     shell:
         """
         seqkit split {input.fasta} --by-part {params.splits} --by-part-prefix split_part_ \
-        --out-dir {wildcards.phage_db_id}/chunks --force -j {resources.cpus_per_task}
+        --out-dir blast/{wildcards.phage_db_id}/chunks --force -j {resources.cpus_per_task}
 
         # Ensure all chunk files use .fasta extension
-        for file in {wildcards.phage_db_id}/chunks/*; do
+        for file in blast/{wildcards.phage_db_id}/chunks/*; do
             mv "$file" "${{file%.*}}.fasta"
         done
        

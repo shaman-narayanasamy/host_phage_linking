@@ -15,7 +15,7 @@ rule split_phage_fasta:
     output:
         temp("{phage_db_id}/fasta_split.done")
     params:
-        output_dir = directory(os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}"))
+        output_dir = directory(os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}", "split_fasta_files"))
     conda: "../envs/seqkit_env.yml"
     resources: 
         cpus_per_task = 12,
@@ -23,6 +23,8 @@ rule split_phage_fasta:
         mem = "200GB"
     shell:
          """
+         mkdir -p {params.output_dir}
+
          if [ -d {input.multi_fasta} ]; then
              echo "{input.multi_fasta} is already a folder likely with multiple fasta files."
              echo "Creating soft link for {params.output_dir}"

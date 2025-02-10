@@ -53,7 +53,7 @@ rule crispr_links_all:
         expand("host_minced/{host_id}.txt", host_id = hosts.index),
         expand("spacepharer/{host_id}-x-{phage_db_id}/predictions.tsv", phage_db_id = phage_dbs.index, host_id = hosts.index),
         #expand("host_crisprcasfinder/{host_id}/rawCRISPRs.fna", host_id = hosts.index),
-        expand("host_crisprcasfinder/{host_id}/results.json", host_id = hosts.index),
+        expand("host_crisprcasfinder/{host_id}/result.json", host_id = hosts.index),
         "blast/makeblastdb_spacers.done",
         expand("blast/{phage_db_id}/results/spacers/final_blast.tsv", phage_db_id = phage_dbs.index)
      output: touch("crispr_links.done")

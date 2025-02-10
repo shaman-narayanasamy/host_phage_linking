@@ -6,7 +6,7 @@ rule crisprcasfinder:
     input:
         host_fasta = lambda wildcards: hosts.loc[wildcards.host_id, "path"],
     output:
-        output = "host_crisprcasfinder/{host_id}/results.json",
+        output = "host_crisprcasfinder/{host_id}/result.json",
         rawCRISPRs = "host_crisprcasfinder/{host_id}/rawCRISPRs.fna"
     resources: 
         cpus_per_task = 4,
@@ -28,5 +28,11 @@ rule crisprcasfinder:
        rm -rf {params.outdir}/{wildcards.host_id}/{wildcards.host_id}
        
        # Ensure rawCRISPRs.fna exists, even if empty
-       touch {output.rawCRISPRs}
+
+       if [[ -e {output.rawCRISPRs} ]]; then
+           echo "File exists!"
+       else
+           echo "File does not exist!"
+           touch {output.rawCRISPRs}
+       fi
        """

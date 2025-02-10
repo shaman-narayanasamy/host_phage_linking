@@ -4,7 +4,7 @@ rule spacepharer:
         host_minced_crispr = "host_minced/{host_id}.txt",
         #phage_db_dir  = "spacepharer_dbs/{phage_db_id}"
         #phage_db_dir  = os.path.join(config["outdir"]["spacepharer_dbs"]/{phage_db_id}")
-        phage_db_dir  = os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}")
+        phage_db_dir  = os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}", "setDbs")
     output:
         predictions = "spacepharer/{host_id}-x-{phage_db_id}/predictions.tsv"
     resources: 
@@ -22,7 +22,7 @@ rule spacepharer:
         if [ $(wc -l < {input.host_pilercr_crispr}) -gt 5 ] && [ -s {input.host_minced_crispr} ]; then
         
             mkdir -p {tmp_dir}/tmpFolder/{wildcards.host_id}-x-{wildcards.phage_db_id}
-    
+            
     	    spacepharer easy-predict {input.host_pilercr_crispr} \
             {input.host_minced_crispr} \
             {input.phage_db_dir}/targetSetDb {output} \
