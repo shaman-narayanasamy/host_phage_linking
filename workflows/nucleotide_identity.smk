@@ -1,7 +1,6 @@
 import subprocess
 import pandas as pd
 
-tmp_dir = os.environ.get("tmp_dir", config['tmp_dir'])
 
 ## Define output directory
 #output_dir = config["output_dir"]

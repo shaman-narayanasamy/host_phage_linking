@@ -1,7 +1,9 @@
 import subprocess
 import pandas as pd
 
-tmp_dir = os.environ.get("tmp_dir", config['tmp_dir'])
+tmp_dir = os.environ.get("tmp_dir", os.path.join(config['tmp_dir'], config["outdir"]["subdir"]))
+
+print(tmp_dir)
 
 ## Define output directory
 output_dir = os.path.join(config["outdir"]["root"], config["outdir"]["subdir"])
@@ -29,7 +31,11 @@ include:
 include:
     "nucleotide_identity.smk"
 
+include:
+    "../rules/vhip.smk"
+
 rule all:
     input: 
         "crispr_links.done",
         "nucleotide_identity.done",
+        expand("vhip/{phage_db_id}/predictions.tsv", phage_db_id = phage_dbs.index)

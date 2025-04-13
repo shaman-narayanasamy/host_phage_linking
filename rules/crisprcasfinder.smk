@@ -21,6 +21,8 @@ rule crisprcasfinder:
        """
        # Need to remove the output directory as it will not overwrite
        rm -rf {params.outdir}/{wildcards.host_id}
+       
+       mkdir -p {tmp_dir}
 
        {params.executor} {input.host_fasta} {params.outdir}/{wildcards.host_id} {tmp_dir}/{wildcards.host_id} {resources.cpus_per_task} 
        
