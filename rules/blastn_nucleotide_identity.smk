@@ -9,6 +9,7 @@ rule blast_chunks_hosts:
         runtime = 7200,
         mem = "100GB"
     conda: "../envs/blast_env.yml"
+    group: "blast_chunks"
     shell:
         """
         blastn -query {input.chunk} -db concatenated_hosts -task 'blastn' \

@@ -28,11 +28,14 @@ include:
 include:
     "crispr_links.smk"
 
-include:
-    "nucleotide_identity.smk"
+#include:
+#    "nucleotide_identity.smk"
 
 include:
-    "../rules/vhip.smk"
+     "identity_links.smk"
+
+#include:
+#    "../rules/vhip.smk"
 
 rule all:
     input: 

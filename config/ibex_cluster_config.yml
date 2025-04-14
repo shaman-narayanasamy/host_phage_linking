@@ -51,3 +51,8 @@ crisprcasfinder:
     ncpus: 4
     mem_gb: "48GB"
     time: "48:00:00"
+
+make_blast_db:
+    nodes: 1
+    mem_gb: "120GB"
+    time: "120:00:00"
