@@ -21,7 +21,7 @@ rule split_fasta_flanks:
          
         for file in blast/chunks/flanks.part_*.fasta; do
             # Extract the numeric part, removing leading zeros
-            num=$(basename "$file" | sed -E 's/.*part_0*([0-9]+)\.fasta/\\1/')
+            num=$(basename "$file" | sed -E 's/.*part_0*([0-9]+)\\.fasta/\\1/')
         
             # Construct the new filename
             new_file="blast/chunks/flanks.part_${{num}}.fasta"

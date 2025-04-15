@@ -8,16 +8,6 @@ rule concatenate_host_genomes:
         cat {input} > {output}
         """
 
-#rule concatenate_phage_genomes:
-#   input:
-#       fasta=lambda wildcards: hosts["path"].tolist()
-#   output:
-#       concatenated_fasta = "concatenated_hosts.fasta"
-#   shell:
-#       """
-#       cat {input} > {output}
-#       """
-
 rule make_blast_db_hosts:
     input:
         host_concatenated_fasta = "concatenated_hosts.fasta"

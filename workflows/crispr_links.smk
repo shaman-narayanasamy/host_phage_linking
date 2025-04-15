@@ -2,7 +2,7 @@ import subprocess
 import pandas as pd
 
 ## Define output directory
-output_dir = os.path.join(config["outdir"]["root"], config["outdir"]["subdir"])
+output_dir = os.path.join(config["outdir"]["root"], config["outdir"]["subdir"], "crispr_links")
 tmp_dir = config["tmp_dir"]
 
 ## Define input files

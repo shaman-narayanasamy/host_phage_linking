@@ -21,7 +21,7 @@ rule split_fasta_spacers:
          
         for file in blast/chunks/spacers.part_*.fasta; do
             # Extract the numeric part, removing leading zeros
-            num=$(basename "$file" | sed -E 's/.*part_0*([0-9]+)\.fasta/\\1/')
+            num=$(basename "$file" | sed -E 's/.*part_0*([0-9]+)\\.fasta/\\1/')
          
             # Construct the new filename
             new_file="blast/chunks/spacers.part_${{num}}.fasta"
@@ -59,7 +59,7 @@ rule blast_chunks_spacers:
         """
 
         #blastn -task blastn-short -query spacers.fasta -db query_database -outfmt 6
-        #-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend qlen qcovs sstart send slen evalue bitscore" \
+        #-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend qlen qcovs sstart send slen evalue bitscore" 
 
 rule combine_results_spacers:
     input:
