@@ -86,7 +86,6 @@ if mode_set == {"host"}:
 if "spacer" in mode_set:
     all_outputs += expand("spacepharer/{phage_db_id}/predictions.tsv", phage_db_id=phage_dbs.index)
     all_outputs += expand("blast/results/spacers/{phage_db_id}_final_blast.tsv", phage_db_id=phage_dbs.index)
-    #all_outputs += expand["blast/results/spacers/final_blast.tsv"]
 
 if "repeat" in mode_set:
     all_outputs += ["blast/results/repeats/final_blast.tsv"]

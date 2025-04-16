@@ -63,7 +63,7 @@ rule blast_chunks:
     shell:
         """
         blastn -query {input.chunk} -db {params.db_prefix} -task 'blastn' \
-            -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen' \
+            -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend qlen qcovs sstart send evalue bitscore slen' \
             -num_threads {resources.cpus_per_task} > {output}
         """
 

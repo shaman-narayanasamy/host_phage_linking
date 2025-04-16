@@ -2,7 +2,7 @@ rule split_fasta_repeats:
     input:
         concatenated_fasta = config["repeats_fasta"]
     output:
-        temp(expand("blast/chunks/repeats.part_{i}.fasta", i = range(1, config["blastn"]["split"] + 1)))
+        temp(expand("blast/chunks/repeats/repeats.part_{i}.fasta", i = range(1, config["blastn"]["split"] + 1)))
     params:
         splits = config["blastn"]["split"]
     resources: 
@@ -11,20 +11,20 @@ rule split_fasta_repeats:
         mem = "100GB"
     conda: "../envs/seqkit_env.yml"
     benchmark: "benchmarks/blast/split_fasta.txt"
-    group: "split_fasta"
+    #group: "split_fasta"
     shell:
         """
-        ln -s {input.concatenated_fasta} repeats.fasta
+        ln -fs {input.concatenated_fasta} repeats.fasta
 
         seqkit split repeats.fasta --by-part {params.splits} \
-        --out-dir blast/chunks --force -j {resources.cpus_per_task}
+        --out-dir blast/chunks/repeats --force -j {resources.cpus_per_task}
          
-        for file in blast/chunks/repeats.part_*.fasta; do
+        for file in blast/chunks/repeats/repeats.part_*.fasta; do
             # Extract the numeric part, removing leading zeros
             num=$(basename "$file" | sed -E 's/.*part_0*([0-9]+)\\.fasta/\\1/')
         
             # Construct the new filename
-            new_file="blast/chunks/repeats.part_${{num}}.fasta"
+            new_file="blast/chunks/repeats/repeats.part_${{num}}.fasta"
         
             # Only rename if the filenames are different
             if [[ "$file" != "$new_file" ]]; then
@@ -39,7 +39,7 @@ rule split_fasta_repeats:
 rule blast_chunks_repeats:
     input:
         donefile = "blast/hosts/makeblastdb.done",
-        chunk = "blast/chunks/repeats.part_{chunk}.fasta"
+        chunk = "blast/chunks/repeats/repeats.part_{chunk}.fasta"
     output:
         temp("blast/results/repeats/{chunk}.blast")
     resources:
@@ -50,11 +50,11 @@ rule blast_chunks_repeats:
         db_prefix = "concatenated_host_seqs_db",
     conda: "../envs/blast_env.yml"
     benchmark: "benchmarks/blast/repeats/{chunk}.txt"
-    group: "blast_chunks"
+    #group: "blast_chunks"
     shell:
         """
         blastn -query {input.chunk} -db blast/hosts/{params.db_prefix} -task 'blastn-short' \
-            -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen' \
+            -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend qlen qcovs sstart send evalue bitscore slen' \
             -num_threads {resources.cpus_per_task} > {output}
         """
         #blastn -task blastn-short -query repeats.fasta -db query_database -outfmt 6
@@ -70,5 +70,7 @@ rule combine_results_repeats:
         """
         cat {input} > {output}
 
-        sed -i '1i qseqid\tsseqid\tpident\tlength\tmismatch\tgapopen\tqstart\tqend\tqlen\tqcovs\tsstart\tsend\tslen\tevalue\tbitscore' {output}
+        sed -i \
+        '1i qseqid\tsseqid\tpident\tlength\tmismatch\tgapopen\tqstart\tqend\tqlen\tqcovs\tsstart\tsend\tevalue\tbitscore\tslen' \
+        {output}
         """

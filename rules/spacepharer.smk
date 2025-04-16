@@ -4,9 +4,12 @@ rule spacepharer:
         host_minced_crispr = "host_minced/{host_id}.txt",
         #phage_db_dir  = "spacepharer_dbs/{phage_db_id}"
         #phage_db_dir  = os.path.join(config["outdir"]["spacepharer_dbs"]/{phage_db_id}")
-        phage_db_dir  = os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}", "setDbs")
+        donefile = "spacepharer/dbs/{phage_db_id}/spacepharer_db.done"
     output:
         predictions = "spacepharer/{host_id}-x-{phage_db_id}/predictions.tsv"
+    params:
+        target_set_db = os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}", "setDbs/targetSetDb"),
+        target_set_db_ref = os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}", "setDbs/targetSetDb_rev")
     resources: 
         cpus_per_task = 12,
         runtime = 7200,

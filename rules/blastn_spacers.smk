@@ -2,7 +2,7 @@ rule split_fasta_spacers:
     input:
         concatenated_fasta = config["spacers_fasta"]
     output:
-        temp(expand("blast/chunks/spacers.part_{i}.fasta", i = range(1, config["blastn"]["split"] + 1)))
+        temp(expand("blast/chunks/spacers/spacers.part_{i}.fasta", i = range(1, config["blastn"]["split"] + 1)))
     params:
         splits = config["blastn"]["split"]
     resources: 
@@ -11,20 +11,20 @@ rule split_fasta_spacers:
         mem = "100GB"
     conda: "../envs/seqkit_env.yml"
     benchmark: "benchmarks/blast/split_fasta.txt"
-    group: "blast_chunks"
+    #group: "blast_chunks"
     shell:
         """
-        ln -s {input.concatenated_fasta} spacers.fasta
+        ln -fs {input.concatenated_fasta} spacers.fasta
          
         seqkit split spacers.fasta --by-part {params.splits} \
-        --out-dir blast/chunks --force -j {resources.cpus_per_task}
+        --out-dir blast/chunks/spacers --force -j {resources.cpus_per_task}
          
-        for file in blast/chunks/spacers.part_*.fasta; do
+        for file in blast/chunks/spacers/spacers.part_*.fasta; do
             # Extract the numeric part, removing leading zeros
             num=$(basename "$file" | sed -E 's/.*part_0*([0-9]+)\\.fasta/\\1/')
          
             # Construct the new filename
-            new_file="blast/chunks/spacers.part_${{num}}.fasta"
+            new_file="blast/chunks/spacers/spacers.part_${{num}}.fasta"
          
             # Only rename if the filenames are different
             if [[ "$file" != "$new_file" ]]; then
@@ -39,7 +39,7 @@ rule split_fasta_spacers:
 rule blast_chunks_spacers:
     input:
         donefile = "blast/{phage_db_id}/makeblastdb.done",
-        chunk = "blast/chunks/spacers.part_{chunk}.fasta"
+        chunk = "blast/chunks/spacers/spacers.part_{chunk}.fasta"
     output:
         temp("blast/results/spacers/{phage_db_id}_{chunk}.blast")
     resources:
@@ -50,11 +50,11 @@ rule blast_chunks_spacers:
         db_prefix = "{phage_db_id}_seqs_db",
     conda: "../envs/blast_env.yml"
     benchmark: "benchmarks/blast/spacers/{phage_db_id}/{chunk}.txt"
-    group: "blast_chunks"
+    #group: "blast_chunks"
     shell:
         """
         blastn -query {input.chunk} -db blast/{params.db_prefix} -task 'blastn-short' \
-            -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen' \
+            -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend qlen qcovs sstart send evalue bitscore slen' \
             -num_threads {resources.cpus_per_task} > {output}
         """
 
@@ -72,5 +72,7 @@ rule combine_results_spacers:
         """
         cat {input} > {output}
 
-        sed -i '1i qseqid\tsseqid\tpident\tlength\tmismatch\tgapopen\tqstart\tqend\tqlen\tqcovs\tsstart\tsend\tslen\tevalue\tbitscore' {output}
+         sed -i \
+        '1i qseqid\tsseqid\tpident\tlength\tmismatch\tgapopen\tqstart\tqend\tqlen\tqcovs\tsstart\tsend\tevalue\tbitscore\tslen' \
+        {output}
         """

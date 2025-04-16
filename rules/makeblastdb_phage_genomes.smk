@@ -10,7 +10,7 @@ rule make_blast_db_phages:
     params:
         db_prefix = "{phage_db_id}_seqs_db",
     benchmark: "benchmarks/blast/{phage_db_id}/make_blast_db.txt"
-    group: "make_blast_db"
+    #group: "make_blast_db"
     shell:
         """
         makeblastdb -in {input.phage_fasta} -dbtype nucl -out blast/{params.db_prefix}

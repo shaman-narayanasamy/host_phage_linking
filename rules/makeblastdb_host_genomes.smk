@@ -14,13 +14,14 @@ rule make_blast_db_hosts:
     output:
         donefile = touch("blast/hosts/makeblastdb.done")
     resources: 
+        cpus_per_task = 24,
         runtime = 7200,
         mem = "120GB"
     conda: "../envs/blast_env.yml"
     params:
         db_prefix = "concatenated_host_seqs_db",
     benchmark: "benchmarks/blast/hosts/make_blast_db.txt"
-    group: "make_blast_db"
+    #group: "make_blast_db"
     shell:
         """
         makeblastdb -in {input.host_concatenated_fasta} -dbtype nucl -out blast/hosts/{params.db_prefix}
