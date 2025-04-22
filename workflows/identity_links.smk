@@ -9,18 +9,10 @@ tmp_dir = config["tmp_dir"]
 hosts = None
 
 # Read the phage table
-
 phage_dbs = pd.read_table(config["phage_db_table"], sep="\t", comment = "#").set_index("ID", drop=False)
 
-# Conditionally load host genomes or spacers
-#if "host_table" in config:
-    # Read the host genome table (individually listed)
+# Read the host table
 hosts = pd.read_table(config["host_table"], sep="\t", comment = "#").set_index("ID", drop=False)
-#    mode = "host"
-#elif "spacers_fasta" in config:
-#    mode = "spacer"
-#else:
-#    raise ValueError("Provide either 'host_table' or 'spacers_fasta' in config.")
 
 workdir:
     output_dir
@@ -37,9 +29,6 @@ chunk_outputs = expand(
     phage_db_id=phage_dbs.index,
     i=range(1, config["blastn"]["split"] + 1)
 )
-
-print(phage_dbs.index)
-print(chunk_outputs)
 
 rule identity_links_all:
      input:
