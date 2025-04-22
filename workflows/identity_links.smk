@@ -33,7 +33,7 @@ include:
 
 
 chunk_outputs = expand(
-    "blast/chunks/({phage_db_id}.part_{i}.fasta",
+    "blast/chunks/{phage_db_id}.part_{i}.fasta",
     phage_db_id=phage_dbs.index,
     i=range(1, config["blastn"]["split"] + 1)
 )
@@ -43,7 +43,6 @@ print(chunk_outputs)
 
 rule identity_links_all:
      input:
-
         expand("blast/chunks/{phage_db_id}.part_{i}.fasta", phage_db_id=phage_dbs.index, i=range(1, config["blastn"]["split"] + 1)),
 
         expand("blast/results/{phage_db_id}/final_blast.tsv", phage_db_id = phage_dbs.index),

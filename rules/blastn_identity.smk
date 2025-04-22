@@ -31,7 +31,7 @@ rule split_fasta:
          
         for file in blast/chunks/{wildcards.phage_db_id}.part_*.fasta; do
             # Extract the numeric part, removing leading zeros
-            num=$(basename "$file" | sed -E 's/.*part_0*([0-9]+)\.fasta/\\1/')
+            num=$(basename "$file" | sed -E 's/.*part_0*([0-9]+)\\.fasta/\\1/')
         
             # Construct the new filename
             new_file="blast/chunks/{wildcards.phage_db_id}.part_${{num}}.fasta"
@@ -49,7 +49,7 @@ rule split_fasta:
 rule blast_chunks:
     input:
         donefile = "blast/hosts/makeblastdb.done",
-        chunk = "blast/chunks/{{phage_db_id}}.part_{chunk}.fasta"
+        chunk = "blast/chunks/{phage_db_id}.part_{chunk}.fasta"
     output:
         temp("blast/results/{phage_db_id}/{chunk}.blast")
     resources:
@@ -82,6 +82,8 @@ rule combine_results:
         """
         cat {input} > {output}
 
-        sed -i '1i qseqid\tsseqid\tpident\tlength\tmismatch\tgapopen\tqstart\tqend\tqlen\tqcovs\tsstart\tsend\tslen\tevalue\tbitscore' {output}
+        sed -i \
+        '1i qseqid\tsseqid\tpident\tlength\tmismatch\tgapopen\tqstart\tqend\tqlen\tqcovs\tsstart\tsend\tevalue\tbitscore\tslen' \
+        {output}
         """
 
