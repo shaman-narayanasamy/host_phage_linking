@@ -51,16 +51,19 @@ include:
 ## Host-only pipeline
 if mode_set == {"host"}:
     include: "../rules/prepare_data.smk"
-    include: "../rules/spacepharer_prepare_db_split.smk"
+    #include: "../rules/spacepharer_prepare_db_split.smk"
+    include: "../rules/spacepharer_prepare_db_phages.smk"
     include: "../rules/pilercr.smk"
     include: "../rules/minced.smk"
-    include: "../rules/spacepharer.smk"
+    include: "../rules/spacepharer_genomes.smk"
     include: "../rules/crisprcasfinder.smk"
 
 ## Spacer pipeline (independent of host presence)
 if "spacer" in mode_set:
-    include: "../rules/spacepharer_prepare_db.smk"
-    include: "../rules/spacepharer_predictmatch.smk"
+    #include: "../rules/spacepharer_prepare_db_spacers.smk"
+    include: "../rules/spacepharer_prepare_db_phages.smk"
+    #include: "../rules/spacepharer_predictmatch.smk"
+    include: "../rules/spacepharer_spacers.smk"
     include: "../rules/makeblastdb_phage_genomes.smk"
     include: "../rules/blastn_spacers.smk"
 
@@ -76,15 +79,14 @@ if "flank" in mode_set:
 all_outputs = []
 
 if mode_set == {"host"}:
-    all_outputs += expand("blastn_links/host/{host_id}.blastn.tsv", host_id=hosts.index)
-    all_outputs += expand(os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}"), phage_db_id=phage_dbs.index)
+    #all_outputs += expand(os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}"), phage_db_id=phage_dbs.index)
     all_outputs += expand("host_pilercr/{host_id}.out", host_id=hosts.index)
     all_outputs += expand("host_minced/{host_id}.txt", host_id=hosts.index)
     all_outputs += expand("spacepharer/{host_id}-x-{phage_db_id}/predictions.tsv", phage_db_id=phage_dbs.index, host_id=hosts.index)
     all_outputs += expand("host_crisprcasfinder/{host_id}/result.json", host_id=hosts.index)
 
 if "spacer" in mode_set:
-    all_outputs += expand("spacepharer/{phage_db_id}/predictions.tsv", phage_db_id=phage_dbs.index)
+    all_outputs += expand("spacepharer/spacers-x-{phage_db_id}/predictions.tsv", phage_db_id=phage_dbs.index)
     all_outputs += expand("blast/results/spacers/{phage_db_id}_final_blast.tsv", phage_db_id=phage_dbs.index)
 
 if "repeat" in mode_set:
@@ -93,10 +95,9 @@ if "repeat" in mode_set:
 if "flank" in mode_set:
     all_outputs += ["blast/results/flanks/final_blast.tsv"]
 
-print(all_outputs)
+#print(all_outputs)
 
 rule crispr_links_all:
      input:
        all_outputs
      output: touch("crispr_links.done")
-

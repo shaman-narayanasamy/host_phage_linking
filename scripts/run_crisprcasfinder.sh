@@ -14,7 +14,12 @@ mkdir -p "$TMP_WORKDIR"  # 🔹 Ensure the temp workdir exists!
 
 INPUT_BASEDIR=$(dirname "$INPUT")
 INPUT_FILENAME=$(basename "$INPUT")
-OUTPUT_BASENAME=$(basename "$INPUT_BASEDIR")
+#OUTPUT_BASENAME=$(basename "$INPUT_BASEDIR")
+OUTPUT_BASENAME=$(basename "$INPUT_FILENAME")
+OUTPUT_BASENAME="${OUTPUT_BASENAME%.fasta}"
+OUTPUT_BASENAME="${OUTPUT_BASENAME%.fas}"
+OUTPUT_BASENAME="${OUTPUT_BASENAME%.fna}"
+echo "$name"
 
 echo $OUTDIR
 echo $INPUT_BASEDIR

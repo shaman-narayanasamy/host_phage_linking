@@ -24,10 +24,8 @@ rule crisprcasfinder:
        
        mkdir -p {tmp_dir}
 
-       {params.executor} {input.host_fasta} {params.outdir}/{wildcards.host_id} {tmp_dir}/{wildcards.host_id} {resources.cpus_per_task} 
+       {params.executor} {input.host_fasta} ./{params.outdir} {tmp_dir}/{wildcards.host_id} {resources.cpus_per_task} 
        
-       mv {params.outdir}/{wildcards.host_id}/{wildcards.host_id}/* {params.outdir}/{wildcards.host_id}
-       rm -rf {params.outdir}/{wildcards.host_id}/{wildcards.host_id}
        
        # Ensure rawCRISPRs.fna exists, even if empty
 
@@ -38,3 +36,7 @@ rule crisprcasfinder:
            touch {output.rawCRISPRs}
        fi
        """
+
+#       mv {params.outdir}/{wildcards.host_id}/{wildcards.host_id}/* {params.outdir}/{wildcards.host_id}
+#       rm -rf {params.outdir}/{wildcards.host_id}/{wildcards.host_id}
+
