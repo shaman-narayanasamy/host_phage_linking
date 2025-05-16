@@ -9,7 +9,8 @@ tmp_dir = config["tmp_dir"]
 hosts = None
 
 # Read the phage table
-phage_dbs = pd.read_table(config["phage_db_table"], sep="\t", comment = "#").set_index("ID", drop=False)
+#phage_dbs = pd.read_table(config["phage_db_table"], sep="\t", comment = "#").set_index("ID", drop=False)
+phage_seqs = config["phage_seqs"]
 
 # Read the host table
 hosts = pd.read_table(config["host_table"], sep="\t", comment = "#").set_index("ID", drop=False)
@@ -24,15 +25,7 @@ include:
     "../rules/blastn_identity.smk"
 
 
-chunk_outputs = expand(
-    "blast/chunks/{phage_db_id}.part_{i}.fasta",
-    phage_db_id=phage_dbs.index,
-    i=range(1, config["blastn"]["split"] + 1)
-)
-
 rule identity_links_all:
      input:
-        expand("blast/chunks/{phage_db_id}.part_{i}.fasta", phage_db_id=phage_dbs.index, i=range(1, config["blastn"]["split"] + 1)),
-
-        expand("blast/results/{phage_db_id}/final_blast.tsv", phage_db_id = phage_dbs.index),
+        "blast/results/phages/final_blast.tsv"
      output: touch("crispr_links.done")

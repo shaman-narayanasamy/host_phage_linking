@@ -1,19 +1,9 @@
-#chunk_outputs = expand(
-#    "blast/chunks/{phage_db_id}.part_{i}.fasta",
-#    phage_db_id=phage_dbs.index,
-#    i=range(1, config["blastn"]["split"] + 1)
-#)
-
 rule split_fasta:
     input:
-        concatenated_fasta = lambda wildcards: phage_dbs.loc[wildcards.phage_db_id, "path"],
+        concatenated_fasta = phage_seqs,
     output:
-        #chunk_outputs
-        #temp(expand("blast/chunks/{{phage_db_id}}.part_{i}.fasta", i = range(1, config["blastn"]["split"] + 1)))
-        #temp(expand("blast/chunks/{phage_db_id}.part_{i}.fasta", phage_db_id = phage_dbs.index, i = range(1, config["blastn"]["split"] + 1)))
-        temp("blast/chunks/{phage_db_id}.part_{i}.fasta")
-        #directory("blast/chunks/{phage_db_id}")
-        #directory("blast/chunks")
+        temp(expand("blast/chunks/phages.part_{i}.fasta", i = range(1, config["blastn"]["split"] + 1)))
+
     params:
         splits = config["blastn"]["split"]
     resources: 
@@ -21,20 +11,20 @@ rule split_fasta:
         runtime = 7200,
         mem = "100GB"
     conda: "../envs/seqkit_env.yml"
-#    benchmark: "benchmarks/{phage_db_id}/split_fasta.txt"
+    benchmark: "benchmarks/phages/split_fasta.txt"
     shell:
         """
-        ln -s {input.concatenated_fasta} {wildcards.phage_db_id}.fasta
+        ln -fs {input.concatenated_fasta} phages.fasta
 
-        seqkit split {wildcards.phage_db_id}.fasta --by-part {params.splits} \
+        seqkit split phages.fasta --by-part {params.splits} \
         --out-dir blast/chunks --force -j {resources.cpus_per_task}
          
-        for file in blast/chunks/{wildcards.phage_db_id}.part_*.fasta; do
+        for file in blast/chunks/phages.part_*.fasta; do
             # Extract the numeric part, removing leading zeros
             num=$(basename "$file" | sed -E 's/.*part_0*([0-9]+)\\.fasta/\\1/')
         
             # Construct the new filename
-            new_file="blast/chunks/{wildcards.phage_db_id}.part_${{num}}.fasta"
+            new_file="blast/chunks/phages.part_${{num}}.fasta"
         
             # Only rename if the filenames are different
             if [[ "$file" != "$new_file" ]]; then
@@ -49,35 +39,30 @@ rule split_fasta:
 rule blast_chunks:
     input:
         donefile = "blast/hosts/makeblastdb.done",
-        chunk = "blast/chunks/{phage_db_id}.part_{chunk}.fasta"
+        chunk = "blast/chunks/phages.part_{chunk}.fasta"
     output:
-        temp("blast/results/{phage_db_id}/{chunk}.blast")
+        temp("blast/results/phages/{chunk}.blast")
     resources:
         cpus_per_task = 48,
         runtime = 7200,
         mem = "120GB"
     params:
-        db_prefix = "concatenated_seqs_db"
+        db_prefix = "concatenated_host_seqs_db"
     conda: "../envs/blast_env.yml"
-    benchmark: "benchmarks/blast_chunks/{phage_db_id}/{chunk}.txt"
+    benchmark: "benchmarks/blast_chunks/phages/{chunk}.txt"
     shell:
         """
-        blastn -query {input.chunk} -db {params.db_prefix} -task 'blastn' \
+        blastn -query {input.chunk} -db blast/hosts/{params.db_prefix} -task 'blastn' \
             -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend qlen qcovs sstart send evalue bitscore slen' \
             -num_threads {resources.cpus_per_task} > {output}
         """
 
 rule combine_results:
     input:
-        lambda wildcards: expand(
-            "blast/results/{phage_db_id}/{chunk}.blast",
-            chunk=range(1, config["blastn"]["split"] + 1),
-            phage_db_id=wildcards.phage_db_id
-        )
-#        expand("blast/results/{phage_db_id}/{chunk}.blast", chunk=range(1, config["blastn"]["split"] + 1))  # Adjust for the number of splits
+        expand("blast/results/phages/{chunk}.blast", chunk=range(1, config["blastn"]["split"] + 1))  # Adjust for the number of splits
     output:
-        "blast/results/{phage_db_id}/final_blast.tsv"
-    benchmark: "benchmarks/{phage_db_id}/combine_results.txt"
+        "blast/results/phages/final_blast.tsv"
+    benchmark: "benchmarks/phages/combine_results.txt"
     shell:
         """
         cat {input} > {output}

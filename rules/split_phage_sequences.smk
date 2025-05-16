@@ -2,7 +2,9 @@ rule split_fasta:
     input:
         fasta = lambda wildcards: phage_dbs.loc[wildcards.phage_db_id, "path"],
     output:
-        temp("blast/{phage_db_id}/chunks/split.done")
+        temp("blast/{phage_db_id}/chunks/split.done"),
+        #temp(expand("blast/{phage_db_id}/chunks/split_part_{chunk}.fasta", chunk = range))
+        temp(expand("blast/{phage_db_id}/chunks/spacers.part_{i}.fasta", phage_db_id = phage_dbs.index, i = range(1, config["blastn"]["split"] + 1)))
     params:
         splits = config["blastn"]["split"],
     resources: 
