@@ -22,8 +22,8 @@ rule spacepharer_genomes:
     log: "spacepharer/{host_id}-x-{phage_db_id}/logs/spacepharer.txt"
     shell:
         """ 
-        rm -rf spacepharer/{wildcards.host_id}-x-{wildcards.phage_db_id}
-        rm -rf {tmp_dir}/tmpFolder/{wildcards.host_id}-x-{wildcards.phage_db_id}
+        #rm -rf spacepharer/{wildcards.host_id}-x-{wildcards.phage_db_id}
+        #rm -rf {tmp_dir}/tmpFolder/{wildcards.host_id}-x-{wildcards.phage_db_id}
 
         mkdir -p spacepharer/{wildcards.host_id}-x-{wildcards.phage_db_id}
          
@@ -34,13 +34,10 @@ rule spacepharer_genomes:
             
     	    spacepharer easy-predict {input.host_pilercr_crispr} \
             {input.host_minced_crispr} \
-            {params.target_set_db} {output} \
+            {params.target_set_db} {output.predictions} \
             {tmp_dir}/spacepharer/tmpFolder/{wildcards.host_id}-x-{wildcards.phage_db_id} \
             --threads {resources.cpus_per_task}
-
         else
-            touch {output}
+            touch {output.predictions}
         fi
         """ 
-
-#spacepharer easy-predict host_pilercr/93_MAGScoT_cleanbin_000045.out     host_minced/93_MAGScoT_cleanbin_000045.txt         spacepharer/dbs/test_virome/setDbs/targetSetDb spacepharer/93_MAGScoT_cleanbin_000045-x-test_virome/predictions.tsv             /tmp/chekc             --threads 4
