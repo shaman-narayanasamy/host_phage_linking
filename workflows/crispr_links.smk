@@ -10,6 +10,7 @@ hosts = None
 
 # Read the phage table
 phage_dbs = pd.read_table(config["phage_db_table"], sep="\t", comment = "#").set_index("ID", drop=False)
+run_crisprcasfinder = config.get("crisprcasfinder", {}).get("enabled", True)
 
 # 1. Detect and assign mode (host, spacer, repeat, flank)
 mode = []
@@ -56,7 +57,8 @@ if mode_set == {"host"}:
     include: "../rules/pilercr.smk"
     include: "../rules/minced.smk"
     include: "../rules/spacepharer_genomes.smk"
-    include: "../rules/crisprcasfinder.smk"
+    if run_crisprcasfinder:
+        include: "../rules/crisprcasfinder.smk"
 
 ## Spacer pipeline (independent of host presence)
 if "spacer" in mode_set:
@@ -80,7 +82,8 @@ if mode_set == {"host"}:
     all_outputs += expand("host_pilercr/{host_id}.out", host_id=hosts.index)
     all_outputs += expand("host_minced/{host_id}.txt", host_id=hosts.index)
     all_outputs += expand("spacepharer/{host_id}-x-{phage_db_id}/predictions.tsv", phage_db_id=phage_dbs.index, host_id=hosts.index)
-    all_outputs += expand("host_crisprcasfinder/{host_id}/result.json", host_id=hosts.index)
+    if run_crisprcasfinder:
+        all_outputs += expand("host_crisprcasfinder/{host_id}/result.json", host_id=hosts.index)
 
 if "spacer" in mode_set:
     all_outputs += expand("spacepharer/spacers-x-{phage_db_id}/predictions.tsv", phage_db_id=phage_dbs.index)
