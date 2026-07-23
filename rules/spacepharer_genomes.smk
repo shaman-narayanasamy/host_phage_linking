@@ -12,7 +12,8 @@ rule spacepharer_genomes:
         #target_set_db = os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}", "setDbs/targetSetDb"),
         #target_set_db_ref = os.path.join(config["outdir"]["spacepharer_db"], "{phage_db_id}", "setDbs/targetSetDb_rev")
         target_set_db = os.path.join("spacepharer", "dbs", "{phage_db_id}", "setDbs/targetSetDb"),
-        target_set_db_rev = os.path.join("spacepharer", "dbs", "{phage_db_id}", "setDbs/targetSetDb_rev")
+        target_set_db_rev = os.path.join("spacepharer", "dbs", "{phage_db_id}", "setDbs/targetSetDb_rev"),
+        tmp_workdir = os.path.join(tmp_dir, "spacepharer", "tmpFolder", "{host_id}-x-{phage_db_id}")
     resources: 
         cpus_per_task = 12,
         runtime = 7200,
@@ -23,19 +24,19 @@ rule spacepharer_genomes:
     shell:
         """ 
         #rm -rf spacepharer/{wildcards.host_id}-x-{wildcards.phage_db_id}
-        #rm -rf {tmp_dir}/tmpFolder/{wildcards.host_id}-x-{wildcards.phage_db_id}
+        #rm -rf {params.tmp_workdir}
 
         mkdir -p spacepharer/{wildcards.host_id}-x-{wildcards.phage_db_id}
          
         # Need an if statement to ensure that the CRISPR files are not empty
         if [ $(wc -l < {input.host_pilercr_crispr}) -gt 5 ] && [ -s {input.host_minced_crispr} ]; then
         
-            mkdir -p {tmp_dir}/tmpFolder/{wildcards.host_id}-x-{wildcards.phage_db_id}
+            mkdir -p {params.tmp_workdir}
             
     	    spacepharer easy-predict {input.host_pilercr_crispr} \
             {input.host_minced_crispr} \
             {params.target_set_db} {output.predictions} \
-            {tmp_dir}/spacepharer/tmpFolder/{wildcards.host_id}-x-{wildcards.phage_db_id} \
+            {params.tmp_workdir} \
             --threads {resources.cpus_per_task}
         else
             touch {output.predictions}
