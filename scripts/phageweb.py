@@ -36,7 +36,8 @@ def submit_data(code, file_gbk, email = None, identity = '80', cds = '6', integr
     return r
     
 def get_args(args):
-    xargs = {'--email' : 'denermaues@gmail.com',
+    # PhageWeb requires a contact e-mail address for job submission.
+    xargs = {'--email' : 'your.email@example.com',
             '--file' : None, 
             '--id' : '80', 
             '--integrity' : '80', 
