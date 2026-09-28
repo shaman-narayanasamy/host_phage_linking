@@ -30,11 +30,6 @@ When the dry run resolves the expected inputs, submit with
 `bash launchers/sbatch.sh`. The optional CRISPR-CasFinder branch has a separate
 launcher, `launchers/sbatch_crisprcasfinder.sh`.
 
-## PRJEB79569 analysis
-
-Host-phage evidence is integrated with ecological and expression analyses in
-[phage_uv_ecology_analysis](https://github.com/shaman-narayanasamy/phage_uv_ecology_analysis).
-Raw data: https://www.ebi.ac.uk/ena/browser/view/PRJEB79569.
 Generated databases, results and scheduler logs belong in project storage.
 
 The existing MIT licence is retained in `LICENSE`.
