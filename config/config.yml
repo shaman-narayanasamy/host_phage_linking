@@ -1,0 +1,27 @@
+---
+tmp_dir: "/ibex/tmp/naras0c"
+phage_db_table: "/ibex/user/naras0c/key_taxa_ww/phage_db.tsv"
+host_table: "/ibex/user/naras0c/key_taxa_ww/all_host_genomes.tsv"
+host_taxa_table: "/ibex/user/naras0c/key_taxa_ww/all_host_taxa.tsv"
+output_dir: "/ibex/user/naras0c/key_taxa_ww/output"
+
+gtdbtk:
+  db: "/ibex/reference/KSL/gtdb-tk/release214"
+
+virhostmatcher:
+  script: "/home/naras0c/repositories/github/VirHostMatcher/vhm.py"
+
+WIsH:
+  sif_path: "/ibex/user/naras0c/WIsH/WIsH.sif"
+
+genomad:
+  db: "/ibex/reference/KSL/genomad/v1.5/genomad_db"
+  threads: 24
+
+seqkit:
+  threads: 24
+
+crisprcasfinder:
+  enabled: true
+  executor_script_path: "/home/naras0c/repositories/github/key_taxa_ww/scripts/run_crisprcasfinder.sh"
+  threads: 4

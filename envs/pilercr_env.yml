@@ -1,0 +1,7 @@
+name: pilercr_env
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - piler-cr=1.06
+prefix: /ibex/user/naras0c/conda-environments/pilercr_env

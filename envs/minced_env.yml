@@ -1,0 +1,7 @@
+name: minced_env
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - minced=0.4.2
+prefix: /ibex/user/naras0c/conda-environments/minced_env

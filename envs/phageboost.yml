@@ -1,0 +1,8 @@
+name: phageboost
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  - pip:
+    - PhageBoost
+prefix: /ibex/user/naras0c/conda-environments/phageboost

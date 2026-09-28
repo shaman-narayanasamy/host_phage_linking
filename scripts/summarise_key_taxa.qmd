@@ -1,0 +1,115 @@
+---
+title: "Key taxa summary"
+format: html
+editor: source
+execute:
+  echo: false 
+  warning: false
+  message: false
+---
+
+
+```{r load_packages}
+library(tidyverse)
+library(ggvenn)
+```
+
+
+```{r load_data}
+sb_blast_dat <- paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", "sb", "_blast2assembly.tsv", sep = "") %>%  
+  read_tsv() %>% 
+  filter(`% identity` >= 95)  
+
+swbd_blast_dat <- paste("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/extracted sequences of core bacteria/assembly_information/", "swbd", "_blast2assembly.tsv", sep = "") %>% 
+  read_tsv() %>% 
+  filter(`% identity` >= 95)
+```
+
+## Key taxa in sludge bulking vs salt water desalination
+
+| System            | BLASTN hits                       | No. of 16S query sequences                              | No. of genome assemblies |
+|-------------------|-----------------------------------|-------------------------------------------------------|--------------------------|
+| sludge bulking    | `r nrow(sb_blast_dat)`            | `r sb_blast_dat %>% select('query acc.ver') %>% distinct() %>% nrow()` | `r sb_blast_dat %>% select(assembly_id) %>% distinct() %>% nrow()`  |
+| swbd              | `r nrow(swbd_blast_dat)`          | `r swbd_blast_dat %>% select('query acc.ver') %>% distinct() %>% nrow()`| `r swbd_blast_dat %>% select(assembly_id) %>% distinct() %>% nrow()` |
+| **Total**         | `r nrow(sb_blast_dat) + nrow(swbd_blast_dat)` | `r sb_blast_dat %>% select('query acc.ver') %>% distinct() %>% nrow() + swbd_blast_dat %>% select('query acc.ver') %>% distinct() %>% nrow()` | `r sb_blast_dat %>% select(assembly_id) %>% distinct() %>% nrow() + swbd_blast_dat %>% select(assembly_id) %>% distinct() %>% nrow()` |
+
+
+Table: Summary of BLASTN hits, distinct (partial) 16S query sequences, and distinct genome assemblies. BLASTN results were filtered based on 95% identity.
+
+```{r assess_overlap}
+# Create a named list for the Venn diagram
+venn_list <- list(
+  sb = sb_blast_dat %>% pull(assembly_id) %>% unique(),
+  swbd = swbd_blast_dat %>% pull(assembly_id) %>% unique()
+)
+
+# Find the intersection manually to ensure there is overlap
+common_ids <- intersect(venn_list$sb, venn_list$swbd)
+length(common_ids)  # 0 if there is no overlap
+
+# Generate the Venn diagram with the cleaned data
+ggvenn(venn_list, stroke_color = NA)
+```
+
+We assess the overlap between the key taxa genomes in the sludge bulking and
+salt water desalination biofilm. We find that the there is no overlap between
+the key taxa genomes between these systems.
+
+
+```{r}
+# Since thre are no overlaps between the two systems, we can bind the tables together.
+blast_dat <- bind_rows(sb_blast_dat, swbd_blast_dat)
+
+blast_dat %>% filter(!is.na(assembly_id)) %>% 
+  filter(`% identity` >= 95) %>% 
+  select(`query acc.ver`, assembly_id, system, taxonomic_level, taxa) %>% distinct() %>% 
+  group_by(`query acc.ver`, taxonomic_level, taxa, system) %>% summarise(no_of_assemblies = n()) %>% 
+  arrange(system) %>% 
+  knitr::kable(caption = "Summary of no. of genomes representing different taxa and systems")
+```
+
+
+```{r}
+genome2cas_system <-
+  readLines("/Users/shaman.narayanasamy/Work/Data/key_taxa_ww/summary_data/crisprcasfinder_host_results-v0.2.tsv") %>%  
+  tibble(line = .) %>%  
+  separate(line, into = paste0("col", 1:20), sep = "\t", fill = "right") %>%  
+  select(assembly_id = col1, where(~ !all(is.na(.) | . == ""))) %>% 
+  pivot_longer(
+    cols = -assembly_id, # Specify columns to pivot into longer format, excluding assembly_id
+    names_to = "tmp", # This will be the new column with the names of the pivoted columns
+    values_to = "cas_type", # This will be the new column with the values from the pivoted columns
+    values_drop_na = TRUE # Drop rows with N/A values in the 'cas_type' column
+  ) %>% select(-tmp) %>% 
+  separate(assembly_id, into = c("gca", "code")) %>% 
+  mutate(assembly_id = paste(gca, code, sep = "_")) %>% 
+  mutate(assembly_id = paste(assembly_id, ".1", sep = ""))
+```
+
+```{r}
+genome2cas_system %>% 
+  group_by(assembly_id) %>% 
+  summarise(no_of_cas_systems = n()) %>% 
+  inner_join(., blast_dat %>% select(assembly_id, taxa, system) %>% distinct, by = "assembly_id") %>% 
+  arrange(desc(no_of_cas_systems)) %>% 
+  knitr::kable(caption = "Summary of total no. of cas systems per genome")
+```
+```{r}
+genome2cas_system %>% 
+  group_by(assembly_id) %>% 
+  summarise(no_of_cas_systems = n()) %>% 
+  ungroup() %>% 
+  inner_join(., blast_dat %>% select(assembly_id, taxa, system) %>% distinct, by = "assembly_id") %>% 
+  group_by(taxa) %>% 
+  summarise(no_of_cas_systems = sum(no_of_cas_systems)) %>% 
+  knitr::kable(caption = "Summary of total no. of cas systems based on taxa")
+```
+
+```{r}
+genome2cas_system %>% 
+  inner_join(., blast_dat %>% select(assembly_id, taxa, system) %>% distinct, by = "assembly_id") %>% 
+  group_by(cas_type) %>% 
+  summarise(no_of_genomes = n()) %>% 
+  arrange(desc(no_of_genomes)) %>% 
+  knitr::kable(caption = "Summary of total no. of cas system types accross all genomes")
+```
