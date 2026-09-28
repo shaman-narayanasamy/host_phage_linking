@@ -26,7 +26,7 @@ rule make_blast_db_hosts:
         """
         makeblastdb -in {input.host_concatenated_fasta} -dbtype nucl -out blast/hosts/{params.db_prefix}
 
-        # Define a function to check for the existence of all expected output files
+        # Check the expected BLAST database files.
         check_outputs() {{
             for ext in nhr nin nsq ndb njs not ntf nto; do
                 if [ ! -f {params.db_prefix}.$ext ]; then

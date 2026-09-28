@@ -28,7 +28,7 @@ rule spacepharer_genomes:
 
         mkdir -p spacepharer/{wildcards.host_id}-x-{wildcards.phage_db_id}
          
-        # Need an if statement to ensure that the CRISPR files are not empty
+        # Run prediction when the CRISPR inputs contain sequences.
         if [ $(wc -l < {input.host_pilercr_crispr}) -gt 5 ] && [ -s {input.host_minced_crispr} ]; then
         
             mkdir -p {params.tmp_workdir}

@@ -1,7 +1,4 @@
-# The software requires the phages and hosts to be in individual fasta files.
-# Typically, bacterial genomes already exist as individual fasta files, but
-# phage genomes, especially from newer databases, are grouped into a
-# multi-fasta file, which needs to be split.
+# Split multi-sequence collections into one FASTA file per host or viral genome.
 
 rule split_phage_fasta:
     """ 

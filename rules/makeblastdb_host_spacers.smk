@@ -25,7 +25,7 @@ rule make_blast_db_spacers:
         """
         makeblastdb -in {input.concatenated_fasta} -dbtype nucl -out {params.db_prefix}
 
-        # Define a function to check for the existence of all expected output files
+        # Check the expected BLAST database files.
         check_outputs() {{
             for ext in nhr nin nsq ndb njs not ntf nto; do
                 if [ ! -f {params.db_prefix}.$ext ]; then

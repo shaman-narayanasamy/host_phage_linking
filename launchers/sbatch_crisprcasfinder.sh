@@ -11,7 +11,7 @@ SMK_CONFIG="config/config.yml"
 SMK_SLURM_CONFIG="config/ibex_cluster_config.yml"
 SMK_CLUSTER_ARGS="sbatch -p {cluster.partition} -N {cluster.nodes} -n {cluster.ntasks} -c {cluster.ncpus} -t {cluster.time} --mem {cluster.mem_gb} --mail-user {cluster.mail-user} --job-name {cluster.job-name} --output {cluster.stdout}"
 
-# Ativate snakemake
+# Activate the Snakemake environment.
 #source ~/miniconda3/bin/activate snakemake
 
 module load snakemake/7.32.3
